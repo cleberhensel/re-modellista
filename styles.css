@@ -34,29 +34,116 @@ header p {
   padding: 1rem;
 }
 
-.product-picker {
-  margin-bottom: 1rem;
+.sidebar-section {
+  border-bottom: 1px solid #e4e4e7;
 }
 
-.product-picker select {
+.sidebar-section:last-child {
+  border-bottom: none;
+}
+
+.sidebar-section > summary {
+  padding: 0.65rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #52525b;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.sidebar-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar-section > summary::before {
+  content: "▾ ";
+  display: inline-block;
+  width: 1em;
+  color: #71717a;
+}
+
+.sidebar-section:not([open]) > summary::before {
+  content: "▸ ";
+}
+
+.sidebar-section.hidden {
+  display: none;
+}
+
+.sidebar-section-body {
+  padding-bottom: 0.85rem;
+}
+
+.sidebar-section-body select {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.875rem;
+  margin-bottom: 0.65rem;
 }
 
-.product-picker select optgroup {
-  font-weight: 600;
-  font-style: normal;
-  color: #52525b;
+.field-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-bottom: 0.25rem;
 }
 
-.product-picker select option {
-  font-weight: 400;
-  color: #18181b;
+.panel.sidebar > .sidebar-section:first-child > summary {
+  padding-top: 0;
+}
+
+.panel.sidebar h2 {
+  display: none;
 }
 
 .measure.hidden {
   display: none;
+}
+
+.composition-panel.hidden {
+  display: none;
+}
+
+.composition-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.composition-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.composition-toggle.hidden {
+  display: none;
+}
+
+.composition-toggle input:disabled + span {
+  color: #a1a1aa;
+}
+
+.sleeve-preset-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+.sleeve-preset-row.hidden {
+  display: none;
+}
+
+.sleeve-preset-row select {
+  width: 100%;
+  padding: 0.35rem;
+  font-size: 0.8125rem;
 }
 
 .panel {

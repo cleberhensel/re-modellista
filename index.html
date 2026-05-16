@@ -13,107 +13,166 @@
   </header>
   <main class="layout">
     <section class="panel sidebar">
-      <h2>Modelo</h2>
-      <div class="product-picker">
-        <select id="product" aria-label="Peça ou parte"></select>
-      </div>
-      <h2>Medidas</h2>
-      <div class="measure" data-measure="bust">
-        <div class="measure-head">
-          <span>Busto</span>
-          <output id="bust-out" for="bust">92</output>
+      <details class="sidebar-section" open>
+        <summary>Modelo</summary>
+        <div class="sidebar-section-body">
+          <label class="field-label" for="product">Peça</label>
+          <select id="product" aria-label="Peça ou parte"></select>
         </div>
-        <input id="bust" type="range" value="92" step="1">
-      </div>
-      <div class="measure" data-measure="height">
-        <div class="measure-head">
-          <span>Comprimento</span>
-          <output id="height-out" for="height">45</output>
+      </details>
+
+      <details class="sidebar-section" id="composition-section" open>
+        <summary>Composição</summary>
+        <div id="composition-panel" class="sidebar-section-body composition-panel hidden">
+          <label class="field-label" for="composition-preset">Configuração</label>
+          <select id="composition-preset" aria-label="Preset de composição"></select>
+          <div class="composition-toggles">
+            <label class="composition-toggle" data-slot="sleeve">
+              <input type="checkbox" data-slot="sleeve">
+              <span>Manga</span>
+            </label>
+            <label class="composition-toggle" data-slot="collar">
+              <input type="checkbox" data-slot="collar">
+              <span>Colarinho</span>
+            </label>
+            <label class="composition-toggle" data-slot="cuff">
+              <input type="checkbox" data-slot="cuff">
+              <span>Punho</span>
+            </label>
+            <label class="composition-toggle" data-slot="placket">
+              <input type="checkbox" data-slot="placket">
+              <span>Carcela</span>
+            </label>
+            <label class="composition-toggle" data-slot="chestPocket">
+              <input type="checkbox" data-slot="chestPocket">
+              <span>Bolso peito</span>
+            </label>
+            <label class="composition-toggle" data-slot="sidePocket">
+              <input type="checkbox" data-slot="sidePocket">
+              <span>Bolso lateral</span>
+            </label>
+            <label class="composition-toggle" data-slot="waistband">
+              <input type="checkbox" data-slot="waistband">
+              <span>Cós</span>
+            </label>
+          </div>
+          <div class="sleeve-preset-row hidden" id="sleeve-preset-row">
+            <label class="field-label" for="sleeve-length-preset">Comprimento manga</label>
+            <select id="sleeve-length-preset" aria-label="Preset comprimento manga">
+              <option value="">Medida do slider</option>
+              <option value="short">Curta</option>
+              <option value="threeQuarter">¾</option>
+              <option value="long">Longa</option>
+            </select>
+          </div>
         </div>
-        <input id="height" type="range" value="45" step="1">
-      </div>
-      <div class="measure" data-measure="waist">
-        <div class="measure-head">
-          <span>Cintura</span>
-          <output id="waist-out" for="waist">81</output>
+      </details>
+
+      <details class="sidebar-section" open>
+        <summary>Medidas</summary>
+        <div class="sidebar-section-body" id="measures-panel">
+          <div class="measure" data-measure="bust">
+            <div class="measure-head">
+              <span>Busto</span>
+              <output id="bust-out" for="bust">92</output>
+            </div>
+            <input id="bust" type="range" value="92" step="1">
+          </div>
+          <div class="measure" data-measure="height">
+            <div class="measure-head">
+              <span>Comprimento</span>
+              <output id="height-out" for="height">45</output>
+            </div>
+            <input id="height" type="range" value="45" step="1">
+          </div>
+          <div class="measure" data-measure="waist">
+            <div class="measure-head">
+              <span>Cintura</span>
+              <output id="waist-out" for="waist">81</output>
+            </div>
+            <input id="waist" type="range" value="81" step="1">
+          </div>
+          <div class="measure" data-measure="wrist">
+            <div class="measure-head">
+              <span>Punho</span>
+              <output id="wrist-out" for="wrist">12</output>
+            </div>
+            <input id="wrist" type="range" value="12" step="1">
+          </div>
+          <div class="measure" data-measure="sleeve">
+            <div class="measure-head">
+              <span>Manga</span>
+              <output id="sleeve-out" for="sleeve">27</output>
+            </div>
+            <input id="sleeve" type="range" value="27" step="1">
+          </div>
+          <div class="measure hidden" data-measure="hip">
+            <div class="measure-head">
+              <span>Quadril</span>
+              <output id="hip-out" for="hip">96</output>
+            </div>
+            <input id="hip" type="range" value="96" step="1">
+          </div>
+          <div class="measure hidden" data-measure="hipDepth">
+            <div class="measure-head">
+              <span>Altura quadril</span>
+              <output id="hipDepth-out" for="hipDepth">20</output>
+            </div>
+            <input id="hipDepth" type="range" value="20" step="1">
+          </div>
+          <div class="measure hidden" data-measure="skirtLength">
+            <div class="measure-head">
+              <span>Comprimento saia</span>
+              <output id="skirtLength-out" for="skirtLength">60</output>
+            </div>
+            <input id="skirtLength" type="range" value="60" step="1">
+          </div>
+          <div class="measure hidden" data-measure="crotchDepth">
+            <div class="measure-head">
+              <span>Gancho</span>
+              <output id="crotchDepth-out" for="crotchDepth">26</output>
+            </div>
+            <input id="crotchDepth" type="range" value="26" step="1">
+          </div>
+          <div class="measure hidden" data-measure="inseam">
+            <div class="measure-head">
+              <span>Entrepernas</span>
+              <output id="inseam-out" for="inseam">78</output>
+            </div>
+            <input id="inseam" type="range" value="78" step="1">
+          </div>
+          <div class="measure hidden" data-measure="bodiceLength">
+            <div class="measure-head">
+              <span>Corpo</span>
+              <output id="bodiceLength-out" for="bodiceLength">42</output>
+            </div>
+            <input id="bodiceLength" type="range" value="42" step="1">
+          </div>
+          <div class="measure hidden" data-measure="designEaseBust">
+            <div class="measure-head">
+              <span>Folga busto</span>
+              <output id="designEaseBust-out" for="designEaseBust">6</output>
+            </div>
+            <input id="designEaseBust" type="range" value="6" step="1">
+          </div>
+          <div class="measure hidden" data-measure="coatLength">
+            <div class="measure-head">
+              <span>Comprimento casaco</span>
+              <output id="coatLength-out" for="coatLength">65</output>
+            </div>
+            <input id="coatLength" type="range" value="65" step="1">
+          </div>
+          <p class="guardrail-hint" id="guardrail-hint" hidden></p>
         </div>
-        <input id="waist" type="range" value="81" step="1">
-      </div>
-      <div class="measure" data-measure="wrist">
-        <div class="measure-head">
-          <span>Punho</span>
-          <output id="wrist-out" for="wrist">12</output>
+      </details>
+
+      <details class="sidebar-section" open>
+        <summary>Ações</summary>
+        <div class="sidebar-section-body action-row">
+          <button id="render" type="button">Gerar</button>
+          <button id="download-pdf" type="button">PDF (tamanho real)</button>
         </div>
-        <input id="wrist" type="range" value="12" step="1">
-      </div>
-      <div class="measure" data-measure="sleeve">
-        <div class="measure-head">
-          <span>Manga</span>
-          <output id="sleeve-out" for="sleeve">27</output>
-        </div>
-        <input id="sleeve" type="range" value="27" step="1">
-      </div>
-      <div class="measure hidden" data-measure="hip">
-        <div class="measure-head">
-          <span>Quadril</span>
-          <output id="hip-out" for="hip">96</output>
-        </div>
-        <input id="hip" type="range" value="96" step="1">
-      </div>
-      <div class="measure hidden" data-measure="hipDepth">
-        <div class="measure-head">
-          <span>Altura quadril</span>
-          <output id="hipDepth-out" for="hipDepth">20</output>
-        </div>
-        <input id="hipDepth" type="range" value="20" step="1">
-      </div>
-      <div class="measure hidden" data-measure="skirtLength">
-        <div class="measure-head">
-          <span>Comprimento saia</span>
-          <output id="skirtLength-out" for="skirtLength">60</output>
-        </div>
-        <input id="skirtLength" type="range" value="60" step="1">
-      </div>
-      <div class="measure hidden" data-measure="crotchDepth">
-        <div class="measure-head">
-          <span>Gancho</span>
-          <output id="crotchDepth-out" for="crotchDepth">26</output>
-        </div>
-        <input id="crotchDepth" type="range" value="26" step="1">
-      </div>
-      <div class="measure hidden" data-measure="inseam">
-        <div class="measure-head">
-          <span>Entrepernas</span>
-          <output id="inseam-out" for="inseam">78</output>
-        </div>
-        <input id="inseam" type="range" value="78" step="1">
-      </div>
-      <div class="measure hidden" data-measure="bodiceLength">
-        <div class="measure-head">
-          <span>Corpo</span>
-          <output id="bodiceLength-out" for="bodiceLength">42</output>
-        </div>
-        <input id="bodiceLength" type="range" value="42" step="1">
-      </div>
-      <div class="measure hidden" data-measure="designEaseBust">
-        <div class="measure-head">
-          <span>Folga busto</span>
-          <output id="designEaseBust-out" for="designEaseBust">6</output>
-        </div>
-        <input id="designEaseBust" type="range" value="6" step="1">
-      </div>
-      <div class="measure hidden" data-measure="coatLength">
-        <div class="measure-head">
-          <span>Comprimento casaco</span>
-          <output id="coatLength-out" for="coatLength">65</output>
-        </div>
-        <input id="coatLength" type="range" value="65" step="1">
-      </div>
-      <p class="guardrail-hint" id="guardrail-hint" hidden></p>
-      <div class="action-row">
-        <button id="render" type="button">Gerar</button>
-        <button id="download-pdf" type="button">PDF (tamanho real)</button>
-      </div>
+      </details>
     </section>
     <section class="panel panel-mold">
       <h2>Molde</h2>

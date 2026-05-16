@@ -24,6 +24,8 @@ export {
   listRegisteredProducts,
   registerProduct,
 } from "./registry.js";
+export { composeGarment } from "./composition/compose.js";
+export type { PartSlotId } from "./types.js";
 export { seventhFromBustCm, seventhToPx } from "./seventh.js";
 export type {
   BodiceMeasurements,

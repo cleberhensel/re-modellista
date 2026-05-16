@@ -1,9 +1,9 @@
 import { composeGarment } from "../composition/compose.js";
 import type { DraftOptions, DraftResult, Measurements } from "../types.js";
 
-export function draftDress(
+export function draftVest(
   measurements: Measurements,
   options: DraftOptions = {}
 ): DraftResult {
-  return composeGarment("vestido", measurements, options);
+  return composeGarment("colete", measurements, options);
 }

@@ -1,5 +1,6 @@
 import { draftBlouse } from "./products/blouse.js";
 import { draftCoat } from "./products/coat.js";
+import { draftVest } from "./products/vest.js";
 import { draftCollarProduct } from "./products/collar.js";
 import { draftCuffProduct } from "./products/cuff.js";
 import { draftDress } from "./products/dress.js";
@@ -36,6 +37,7 @@ const PRODUCT_DRAFTERS: Record<string, ProductDraftFn> = {
   carcela: draftPlacketProduct,
   malha: draftKnit,
   casaco: draftCoat,
+  colete: draftVest,
 };
 
 export function registerProduct(id: string, draftFn: ProductDraftFn): void {

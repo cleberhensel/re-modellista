@@ -31,6 +31,19 @@ describe("catalog/products", () => {
     const p = getProduct("blusa");
     expect(p?.implemented).toBe(true);
     expect(p?.measureKeys).toContain("bust");
+    expect(p?.compositionFields).toContain("sleeve");
+  });
+
+  it("camisa composition defaults reflect full shirt", () => {
+    const p = getProduct("camisa");
+    expect(p?.compositionDefaults?.includeSleeve).toBe(true);
+    expect(p?.compositionDefaults?.includeCollar).toBe(true);
+  });
+
+  it("lists colete garment", () => {
+    const p = getProduct("colete");
+    expect(p?.kind).toBe("garment");
+    expect(p?.compositionDefaults?.includeSleeve).toBe(false);
   });
 
   it("returns undefined for unknown", () => {

@@ -141,11 +141,24 @@ export interface DraftBounds {
   height: number;
 }
 
+export type PartSlotId =
+  | "bodice"
+  | "sleeve"
+  | "collar"
+  | "cuff"
+  | "placket"
+  | "chestPocket"
+  | "sidePocket"
+  | "skirt"
+  | "pant"
+  | "waistband";
+
 export interface DraftResult {
   productId: string;
   ctx: DraftContext | SkirtContext | PantContext;
   pieces: PatternPiece[];
   bounds: DraftBounds;
+  activeSlots?: PartSlotId[];
   meta?: Record<string, number>;
   error?: string;
 }
@@ -163,4 +176,12 @@ export interface DraftOptions {
   includeWaistband?: boolean;
   legLengthCm?: number;
   sleeveCapScale?: number;
+  includeSleeve?: boolean;
+  includeCollar?: boolean;
+  includeCuff?: boolean;
+  includePlacket?: boolean;
+  includeChestPocket?: boolean;
+  includeSidePocket?: boolean;
+  sleevePreset?: "short" | "threeQuarter" | "long";
+  lockedSlots?: PartSlotId[];
 }

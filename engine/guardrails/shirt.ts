@@ -21,6 +21,12 @@ export const shirtGuardrails: PieceGuardrails = {
   pieceId: "camisa",
   resolve(measurements, changed, options = {}) {
     const resolved = blouseGuardrails.resolve(measurements, changed, options);
+    if (
+      options.includeSleeve === false ||
+      options.sleeveless
+    ) {
+      return resolved;
+    }
     const ease = capEaseCm(resolved, options);
     if (
       ease != null &&

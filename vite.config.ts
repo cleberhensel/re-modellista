@@ -21,6 +21,7 @@ export default defineConfig({
       exclude: [
         "**/*.test.ts",
         "engine/types.ts",
+        "engine/composition/types.ts",
         "engine/guardrails/types.ts",
         "scripts/**",
         "vite.config.ts",

@@ -1,4 +1,5 @@
 import type { MeasurementKey } from "../engine/guardrails/types.js";
+import type { DraftOptions, PartSlotId } from "../engine/types.js";
 
 export type CatalogKind = "garment" | "part";
 
@@ -18,6 +19,7 @@ export type ProductId =
   | "bermuda"
   | "vestido"
   | "top-sem-mangas"
+  | "colete"
   | "punho"
   | "colarinho"
   | "cos"
@@ -26,6 +28,12 @@ export type ProductId =
   | "malha"
   | "casaco";
 
+export interface CompositionPresetDef {
+  id: string;
+  label: string;
+  options: Partial<DraftOptions>;
+}
+
 export interface ProductDefinition {
   id: ProductId;
   label: string;
@@ -33,7 +41,129 @@ export interface ProductDefinition {
   implemented: boolean;
   measureKeys: MeasurementKey[];
   defaults: Record<string, number>;
+  recipeId?: string;
+  compositionDefaults?: Partial<DraftOptions>;
+  compositionFields?: PartSlotId[];
+  compositionPresets?: CompositionPresetDef[];
+  defaultCompositionPresetId?: string;
 }
+
+const OFF_SLOTS: Partial<DraftOptions> = {
+  includeSleeve: false,
+  includeCollar: false,
+  includeCuff: false,
+  includePlacket: false,
+  includeChestPocket: false,
+  includeSidePocket: false,
+  includeWaistband: false,
+  sleeveless: false,
+};
+
+const BLOUSE_PRESETS: CompositionPresetDef[] = [
+  { id: "custom", label: "Personalizado", options: {} },
+  { id: "body-only", label: "Só corpo", options: { ...OFF_SLOTS } },
+  {
+    id: "with-sleeve",
+    label: "Com manga",
+    options: { ...OFF_SLOTS, includeSleeve: true },
+  },
+  {
+    id: "blouse-full",
+    label: "Blusa completa",
+    options: {
+      ...OFF_SLOTS,
+      includeSleeve: true,
+      includeCollar: true,
+      includeCuff: true,
+    },
+  },
+  {
+    id: "tshirt",
+    label: "Camiseta",
+    options: {
+      ...OFF_SLOTS,
+      includeSleeve: true,
+      sleevePreset: "short",
+    },
+  },
+];
+
+const SHIRT_PRESETS: CompositionPresetDef[] = [
+  { id: "custom", label: "Personalizado", options: {} },
+  { id: "body-only", label: "Só corpo", options: { ...OFF_SLOTS } },
+  {
+    id: "with-sleeve",
+    label: "Com manga",
+    options: { ...OFF_SLOTS, includeSleeve: true },
+  },
+  {
+    id: "full-shirt",
+    label: "Camisa completa",
+    options: {
+      ...OFF_SLOTS,
+      includeSleeve: true,
+      includeCollar: true,
+      includeCuff: true,
+      includePlacket: true,
+      includeChestPocket: true,
+    },
+  },
+  {
+    id: "tshirt",
+    label: "Camiseta",
+    options: {
+      ...OFF_SLOTS,
+      includeSleeve: true,
+      sleevePreset: "short",
+    },
+  },
+];
+
+const LOWER_PRESETS: CompositionPresetDef[] = [
+  { id: "custom", label: "Personalizado", options: {} },
+  { id: "body-only", label: "Sem cós", options: { includeWaistband: false } },
+  {
+    id: "with-waistband",
+    label: "Com cós",
+    options: { includeWaistband: true },
+  },
+];
+
+const DRESS_PRESETS: CompositionPresetDef[] = [
+  ...BLOUSE_PRESETS.filter((p) => p.id !== "blouse-full"),
+  {
+    id: "dress-full",
+    label: "Vestido completo",
+    options: {
+      ...OFF_SLOTS,
+      includeSleeve: true,
+      includeCollar: true,
+      includeCuff: true,
+    },
+  },
+];
+
+const COAT_PRESETS: CompositionPresetDef[] = [
+  { id: "custom", label: "Personalizado", options: {} },
+  {
+    id: "coat-default",
+    label: "Casaco (manga longa)",
+    options: {
+      includeSleeve: true,
+      sleevePreset: "long",
+      includeSidePocket: false,
+    },
+  },
+];
+
+const VEST_PRESETS: CompositionPresetDef[] = [
+  { id: "custom", label: "Personalizado", options: {} },
+  {
+    id: "vest",
+    label: "Colete",
+    options: { ...OFF_SLOTS, sleeveless: true, includeSleeve: false },
+  },
+];
 
 export interface CatalogGroup {
   kind: CatalogKind;
@@ -41,12 +171,26 @@ export interface CatalogGroup {
   products: ProductDefinition[];
 }
 
+const BODICE_FIELDS: PartSlotId[] = [
+  "sleeve",
+  "collar",
+  "cuff",
+  "placket",
+  "chestPocket",
+  "sidePocket",
+];
+
 const PRODUCTS: ProductDefinition[] = [
   {
     id: "blusa",
     label: "Blusa",
     kind: "garment",
     implemented: true,
+    recipeId: "blusa",
+    compositionFields: BODICE_FIELDS,
+    compositionDefaults: {},
+    compositionPresets: BLOUSE_PRESETS,
+    defaultCompositionPresetId: "body-only",
     measureKeys: ["bust", "height", "waist", "wrist", "sleeveLength"],
     defaults: { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
   },
@@ -55,6 +199,17 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Camisa",
     kind: "garment",
     implemented: true,
+    recipeId: "camisa",
+    compositionFields: BODICE_FIELDS,
+    compositionDefaults: {
+      includeSleeve: true,
+      includeCollar: true,
+      includeCuff: true,
+      includePlacket: true,
+      includeChestPocket: true,
+    },
+    compositionPresets: SHIRT_PRESETS,
+    defaultCompositionPresetId: "full-shirt",
     measureKeys: ["bust", "height", "waist", "wrist", "sleeveLength"],
     defaults: { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
   },
@@ -63,6 +218,11 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Saia reta",
     kind: "garment",
     implemented: true,
+    recipeId: "saia-reta",
+    compositionFields: ["waistband"],
+    compositionDefaults: {},
+    compositionPresets: LOWER_PRESETS,
+    defaultCompositionPresetId: "body-only",
     measureKeys: ["waist", "hip", "hipDepth", "skirtLength"],
     defaults: { waist: 70, hip: 96, hipDepth: 20, skirtLength: 60 },
   },
@@ -71,6 +231,11 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Calça",
     kind: "garment",
     implemented: true,
+    recipeId: "calca",
+    compositionFields: ["waistband"],
+    compositionDefaults: {},
+    compositionPresets: LOWER_PRESETS,
+    defaultCompositionPresetId: "body-only",
     measureKeys: ["waist", "hip", "crotchDepth", "inseam"],
     defaults: { waist: 70, hip: 96, crotchDepth: 26, inseam: 78 },
   },
@@ -79,6 +244,11 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Bermuda",
     kind: "garment",
     implemented: true,
+    recipeId: "bermuda",
+    compositionFields: ["waistband"],
+    compositionDefaults: { legLengthCm: 45 },
+    compositionPresets: LOWER_PRESETS,
+    defaultCompositionPresetId: "body-only",
     measureKeys: ["waist", "hip", "crotchDepth", "inseam"],
     defaults: { waist: 70, hip: 96, crotchDepth: 26, inseam: 78 },
   },
@@ -87,6 +257,11 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Vestido",
     kind: "garment",
     implemented: true,
+    recipeId: "vestido",
+    compositionFields: [...BODICE_FIELDS, "waistband"],
+    compositionDefaults: {},
+    compositionPresets: DRESS_PRESETS,
+    defaultCompositionPresetId: "body-only",
     measureKeys: [
       "bust",
       "bodiceLength",
@@ -113,6 +288,24 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Top sem mangas",
     kind: "garment",
     implemented: true,
+    recipeId: "top-sem-mangas",
+    compositionFields: ["chestPocket"],
+    compositionDefaults: { sleeveless: true, includeSleeve: false },
+    compositionPresets: VEST_PRESETS,
+    defaultCompositionPresetId: "vest",
+    measureKeys: ["bust", "height", "waist", "wrist", "sleeveLength"],
+    defaults: { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
+  },
+  {
+    id: "colete",
+    label: "Colete",
+    kind: "garment",
+    implemented: true,
+    recipeId: "colete",
+    compositionFields: ["chestPocket", "placket"],
+    compositionDefaults: { sleeveless: true, includeSleeve: false },
+    compositionPresets: VEST_PRESETS,
+    defaultCompositionPresetId: "vest",
     measureKeys: ["bust", "height", "waist", "wrist", "sleeveLength"],
     defaults: { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
   },
@@ -121,6 +314,11 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Malha",
     kind: "garment",
     implemented: true,
+    recipeId: "malha",
+    compositionFields: BODICE_FIELDS,
+    compositionDefaults: { fabricProfileId: "knit-light" },
+    compositionPresets: BLOUSE_PRESETS,
+    defaultCompositionPresetId: "body-only",
     measureKeys: ["bust", "height", "waist", "wrist", "sleeveLength"],
     defaults: { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
   },
@@ -129,6 +327,14 @@ const PRODUCTS: ProductDefinition[] = [
     label: "Casaco",
     kind: "garment",
     implemented: true,
+    recipeId: "casaco",
+    compositionFields: ["sidePocket"],
+    compositionDefaults: {
+      includeSleeve: true,
+      sleevePreset: "long",
+    },
+    compositionPresets: COAT_PRESETS,
+    defaultCompositionPresetId: "coat-default",
     measureKeys: [
       "bust",
       "coatLength",
@@ -210,4 +416,12 @@ export function listCatalogGroups(): CatalogGroup[] {
 
 export function getProduct(id: string): ProductDefinition | undefined {
   return PRODUCTS.find((p) => p.id === id);
+}
+
+export function getCompositionPreset(
+  productId: string,
+  presetId: string
+): CompositionPresetDef | undefined {
+  const product = getProduct(productId);
+  return product?.compositionPresets?.find((p) => p.id === presetId);
 }

@@ -91,12 +91,12 @@ export function draftSleevePiece(
 
   const outline: PathSegment[] = capPathSegments(verts);
 
-  const { k, startOne, measurements } = ctx;
+  const { k, measurements } = ctx;
   const widthFist = measurements.wrist * k + 5 * k;
-  const marginLeft = gridWidth * 2 - widthFist;
-  const yWrist = startOne + measurements.sleeveLength * k;
-  const cuffLeft = point(startOne + marginLeft, yWrist);
-  const cuffRight = point(startOne + marginLeft + widthFist, yWrist);
+  const yWrist = grid.h4Left.y + measurements.sleeveLength * k;
+  const capCenterX = (grid.h4Left.x + grid.h4Right.x) / 2;
+  const cuffLeft = point(capCenterX - widthFist / 2, yWrist);
+  const cuffRight = point(capCenterX + widthFist / 2, yWrist);
 
   outline.push(lineSegment(grid.h4Left, cuffLeft));
   outline.push(lineSegment(cuffLeft, cuffRight));

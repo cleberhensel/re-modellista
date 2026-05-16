@@ -1,13 +1,53 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const measure = (id: string, value: string, label: string) =>
-  `<motion class="measure" data-measure="${id}">` +
+  `<div class="measure" data-measure="${id}">` +
   `<div class="measure-head"><span>${label}</span>` +
   `<output id="${id}-out" for="${id}">${value}</output></div>` +
   `<input id="${id}" type="range" value="${value}" step="1"></div>`;
 
 const fullDom = `
   <select id="product"><option value="blusa">Blusa</option></select>
+  <section id="composition-section">
+  <div id="composition-panel" class="composition-panel">
+    <select id="composition-preset"></select>
+    <div class="composition-toggles">
+      <label class="composition-toggle" data-slot="sleeve">
+        <input type="checkbox" data-slot="sleeve">
+        <span>Manga</span>
+      </label>
+      <label class="composition-toggle" data-slot="collar">
+        <input type="checkbox" data-slot="collar">
+        <span>Colarinho</span>
+      </label>
+      <label class="composition-toggle" data-slot="cuff">
+        <input type="checkbox" data-slot="cuff">
+        <span>Punho</span>
+      </label>
+      <label class="composition-toggle" data-slot="placket">
+        <input type="checkbox" data-slot="placket">
+        <span>Carcela</span>
+      </label>
+      <label class="composition-toggle" data-slot="chestPocket">
+        <input type="checkbox" data-slot="chestPocket">
+        <span>Bolso</span>
+      </label>
+      <label class="composition-toggle" data-slot="sidePocket">
+        <input type="checkbox" data-slot="sidePocket">
+        <span>Lateral</span>
+      </label>
+      <label class="composition-toggle" data-slot="waistband">
+        <input type="checkbox" data-slot="waistband">
+        <span>Cós</span>
+      </label>
+    </div>
+    <div id="sleeve-preset-row" class="sleeve-preset-row"></div>
+    <select id="sleeve-length-preset">
+      <option value=""></option>
+      <option value="short">Curta</option>
+    </select>
+  </div>
+  </section>
   ${measure("bust", "92", "Busto")}
   ${measure("height", "45", "Comprimento")}
   ${measure("waist", "81", "Cintura")}
@@ -104,6 +144,108 @@ describe("app", () => {
     downloadBtn.click();
     await vi.waitFor(() => expect(alertMock).toHaveBeenCalled());
     alertMock.mockRestore();
+  });
+
+  it("aplica presets de composição por produto", async () => {
+    document.body.innerHTML = fullDom;
+    await import("./app.js");
+    const preset = document.getElementById(
+      "composition-preset"
+    ) as HTMLSelectElement;
+    preset.value = "with-sleeve";
+    preset.dispatchEvent(new Event("change"));
+    expect(
+      (document.querySelector('input[data-slot="sleeve"]') as HTMLInputElement)
+        .checked
+    ).toBe(true);
+    preset.value = "blouse-full";
+    preset.dispatchEvent(new Event("change"));
+    expect(
+      (document.querySelector('input[data-slot="collar"]') as HTMLInputElement)
+        .checked
+    ).toBe(true);
+    expect(
+      (document.querySelector('input[data-slot="cuff"]') as HTMLInputElement)
+        .checked
+    ).toBe(true);
+    const product = document.getElementById("product") as HTMLSelectElement;
+    product.innerHTML =
+      '<option value="blusa">Blusa</option><option value="camisa">Camisa</option>';
+    product.value = "camisa";
+    product.dispatchEvent(new Event("change"));
+    expect(preset.value).toBe("full-shirt");
+    expect(
+      (document.querySelector('input[data-slot="placket"]') as HTMLInputElement)
+        .checked
+    ).toBe(true);
+  });
+
+  it("preset personalizado e comprimento manga", async () => {
+    document.body.innerHTML = fullDom;
+    await import("./app.js");
+    const preset = document.getElementById(
+      "composition-preset"
+    ) as HTMLSelectElement;
+    preset.value = "custom";
+    preset.dispatchEvent(new Event("change"));
+    (
+      document.querySelector('input[data-slot="sleeve"]') as HTMLInputElement
+    ).checked = true;
+    (
+      document.querySelector('input[data-slot="sleeve"]') as HTMLInputElement
+    ).dispatchEvent(new Event("change"));
+    const lengthPreset = document.getElementById(
+      "sleeve-length-preset"
+    ) as HTMLSelectElement;
+    lengthPreset.value = "short";
+    lengthPreset.dispatchEvent(new Event("change"));
+    expect(preset.value).toBe("custom");
+    expect(document.getElementById("preview")?.innerHTML).toContain("<svg");
+  });
+
+  it("marca personalizado ao alterar toggle", async () => {
+    document.body.innerHTML = fullDom;
+    await import("./app.js");
+    const preset = document.getElementById(
+      "composition-preset"
+    ) as HTMLSelectElement;
+    preset.value = "with-sleeve";
+    preset.dispatchEvent(new Event("change"));
+    (
+      document.querySelector('input[data-slot="collar"]') as HTMLInputElement
+    ).checked = true;
+    (
+      document.querySelector('input[data-slot="collar"]') as HTMLInputElement
+    ).dispatchEvent(new Event("change"));
+    expect(preset.value).toBe("custom");
+  });
+
+  it("preset camiseta omite colarinho no svg", async () => {
+    document.body.innerHTML = fullDom;
+    await import("./app.js");
+    const preset = document.getElementById(
+      "composition-preset"
+    ) as HTMLSelectElement;
+    preset.value = "tshirt";
+    preset.dispatchEvent(new Event("change"));
+    const preview = document.getElementById("preview") as HTMLDivElement;
+    expect(preview.innerHTML).toContain("<svg");
+    expect(preview.innerHTML).not.toContain("collar-stand");
+    expect(preview.innerHTML).not.toContain("collar-fall");
+  });
+
+  it("aplica defaults estaticos de malha e bermuda", async () => {
+    document.body.innerHTML = fullDom;
+    await import("./app.js");
+    const product = document.getElementById("product") as HTMLSelectElement;
+    product.innerHTML =
+      '<option value="malha">Malha</option><option value="bermuda">Bermuda</option>';
+    product.value = "malha";
+    product.dispatchEvent(new Event("change"));
+    (document.getElementById("render") as HTMLButtonElement).click();
+    product.value = "bermuda";
+    product.dispatchEvent(new Event("change"));
+    expect(document.getElementById("preview")?.innerHTML).toContain("<svg");
   });
 
   it("exposes product id in context panel", async () => {

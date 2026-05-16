@@ -4,7 +4,12 @@ import { buildContext } from "./context.js";
 import * as skirtModule from "./skirt-context.js";
 import * as blouseFrontModule from "./pieces/blouse-front.js";
 import * as blouseBackModule from "./pieces/blouse-back.js";
+import { composeGarment } from "./composition/compose.js";
+import { listRecipeProductIds } from "./composition/registry.js";
 import { draftDress } from "./products/dress.js";
+import { draftVest } from "./products/vest.js";
+import { draftSidePocket } from "./pieces/side-pocket.js";
+import { shirtGuardrails } from "./guardrails/shirt.js";
 import { blouseStability, blouseGuardrails } from "./guardrails/blouse.js";
 import * as checksModule from "./guardrails/checks.js";
 import {
@@ -182,6 +187,51 @@ describe("coverage paths", () => {
     );
     expect(heightOnly.height).toBeGreaterThanOrEqual(28);
     vi.restoreAllMocks();
+  });
+
+  it("covers sleeve centered cuff geometry", () => {
+    const ctx = buildContext(m);
+    const piece = draftSleevePiece(ctx);
+    const segs = piece.paths;
+    const right = segs[segs.length - 1];
+    expect(right.type).toBe("line");
+    if (right.type === "line") {
+      expect(Math.abs(right.to.x - right.from.x)).toBeGreaterThan(1);
+    }
+  });
+
+  it("covers composition extras", () => {
+    expect(listRecipeProductIds()).toContain("blusa");
+    expect(() => composeGarment("unknown", m)).toThrow("unknown_recipe");
+    const coat = composeGarment(
+      "casaco",
+      { ...m, designEaseBust: 6, coatLength: 65 },
+      { includeSidePocket: true }
+    );
+    expect(coat.pieces.map((p) => p.id)).toContain("side-pocket");
+    expect(draftVest(m).productId).toBe("colete");
+    const badFront = vi.spyOn(blouseFrontModule, "draftBlouseFront").mockReturnValue({
+      id: "blouse-front",
+      paths: [],
+      error: "e",
+    });
+    expect(draftSidePocket(buildContext(m)).error).toBe("side_pocket_unavailable");
+    badFront.mockRestore();
+    const dressWithSleeve = composeGarment(
+      "vestido",
+      {
+        ...m,
+        bodiceLength: 42,
+        hip: 96,
+        hipDepth: 20,
+        skirtLength: 60,
+      },
+      { includeSleeve: true }
+    );
+    expect(dressWithSleeve.pieces.map((p) => p.id)).toContain("sleeve");
+    expect(
+      shirtGuardrails.resolve(m, "bust", { includeSleeve: false }).bust
+    ).toBe(m.bust);
   });
 
   it("covers sleeve handle zero length", () => {

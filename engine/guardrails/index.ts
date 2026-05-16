@@ -45,6 +45,7 @@ const REGISTRY: Record<string, PieceGuardrails> = {
   carcela: placketGuardrails,
   malha: knitGuardrails,
   casaco: coatGuardrails,
+  colete: sleevelessTopGuardrails,
 };
 
 export function getGuardrails(productId: string): PieceGuardrails {

@@ -184,4 +184,5 @@ export interface DraftOptions {
   includeSidePocket?: boolean;
   sleevePreset?: "short" | "threeQuarter" | "long";
   lockedSlots?: PartSlotId[];
+  seamAllowanceCm?: number;
 }

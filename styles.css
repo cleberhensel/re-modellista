@@ -266,8 +266,7 @@ header p {
 
 .preview {
   min-height: 400px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: auto;
   background: #fafafa;
   border: 1px dashed #d4d4d8;
   border-radius: 4px;

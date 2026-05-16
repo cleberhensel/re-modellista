@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { draft } from "../engine/index.js";
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
+import { lineSegment, point } from "../engine/geometry.js";
 import * as svgModule from "./svg.js";
 import {
   exportDraftToPdf,
@@ -81,6 +82,40 @@ describe("exportDraftToPdf", () => {
         pieces: [{ id: "dot", paths: [{ type: "move", to: { x: 0, y: 0 } }] }],
       })
     ).rejects.toThrow("no_pieces");
+  });
+
+  it("uses landscape orientation for wide pieces", async () => {
+    const { jsPDF } = await import("jspdf");
+    const base = draft(
+      { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
+      { productId: "blusa" }
+    );
+    await exportDraftToPdf({
+      ...base,
+      pieces: [
+        {
+          id: "wide",
+          paths: [
+            lineSegment(point(0, 0), point(400, 0)),
+            lineSegment(point(400, 0), point(400, 40)),
+            lineSegment(point(400, 40), point(0, 40)),
+            lineSegment(point(0, 40), point(0, 0)),
+          ],
+        },
+      ],
+    });
+    expect(jsPDF).toHaveBeenCalledWith(
+      expect.objectContaining({ orientation: "landscape" })
+    );
+  });
+
+  it("skips seam padding when allowance is zero", async () => {
+    const result = draft(
+      { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
+      { productId: "blusa" }
+    );
+    const blob = await exportDraftToPdf(result, { seamAllowanceCm: 0 });
+    expect(blob.type).toBe("application/pdf");
   });
 
   it("throws on invalid svg markup", async () => {

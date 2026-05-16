@@ -3,7 +3,8 @@ import { svg2pdf } from "svg2pdf.js";
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
 import type { DraftResult } from "../engine/types.js";
 import { pieceBounds, translatePiece, type PieceBounds } from "./layout.js";
-import { renderPieceToPrintSvg } from "./svg.js";
+import { seamAllowancePaddingPx } from "./seam-allowance.js";
+import { renderPieceToPrintSvg, type RenderOptions } from "./svg.js";
 
 const PAGE_MARGIN_PT = DEFAULT_PX_PER_CM;
 
@@ -37,7 +38,25 @@ function pageOrientation(width: number, height: number): "portrait" | "landscape
   return width > height ? "landscape" : "portrait";
 }
 
-export async function exportDraftToPdf(result: DraftResult): Promise<Blob> {
+function expandBoundsForSeamAllowance(
+  bounds: ReturnType<typeof pieceBounds>,
+  paddingPx: number
+) {
+  if (paddingPx <= 0) return bounds;
+  return {
+    minX: bounds.minX - paddingPx,
+    minY: bounds.minY - paddingPx,
+    maxX: bounds.maxX + paddingPx,
+    maxY: bounds.maxY + paddingPx,
+    width: bounds.width + paddingPx * 2,
+    height: bounds.height + paddingPx * 2,
+  };
+}
+
+export async function exportDraftToPdf(
+  result: DraftResult,
+  options: RenderOptions = {}
+): Promise<Blob> {
   const drawable = result.pieces.filter((p) => p.paths.length > 0);
   if (drawable.length === 0) {
     throw new Error("no_pieces");
@@ -46,10 +65,15 @@ export async function exportDraftToPdf(result: DraftResult): Promise<Blob> {
   let doc: jsPDF | null = null;
 
   for (const piece of drawable) {
-    const bounds = pieceBounds(piece);
-    if (bounds.width <= 0 && bounds.height <= 0) {
+    const rawBounds = pieceBounds(piece);
+    if (rawBounds.width <= 0 && rawBounds.height <= 0) {
       continue;
     }
+    const paddingPx = seamAllowancePaddingPx(
+      options.seamAllowanceCm,
+      options.pxPerCm
+    );
+    const bounds = expandBoundsForSeamAllowance(rawBounds, paddingPx);
     const page = printPageSize(bounds);
     const orientation = pageOrientation(page.width, page.height);
     if (!doc) {
@@ -67,7 +91,12 @@ export async function exportDraftToPdf(result: DraftResult): Promise<Blob> {
       page.marginPt - bounds.minX,
       page.marginPt - bounds.minY
     );
-    const svg = renderPieceToPrintSvg(placed, page.width, page.height);
+    const svg = renderPieceToPrintSvg(
+      placed,
+      page.width,
+      page.height,
+      options
+    );
     const el = svgElementFromString(svg);
     await svg2pdf(el, doc, {
       x: 0,

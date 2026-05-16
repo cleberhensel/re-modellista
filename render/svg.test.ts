@@ -121,6 +121,26 @@ describe("renderPieceToPrintSvg", () => {
     expect(svg).toContain('y="10.00"');
   });
 
+  it("renders seam allowance dashed outline on print svg", () => {
+    const svg = renderPieceToPrintSvg(
+      {
+        id: "box",
+        paths: [
+          { type: "line", from: { x: 0, y: 0 }, to: { x: 80, y: 0 } },
+          { type: "line", from: { x: 80, y: 0 }, to: { x: 80, y: 80 } },
+          { type: "line", from: { x: 80, y: 80 }, to: { x: 0, y: 80 } },
+          { type: "line", from: { x: 0, y: 80 }, to: { x: 0, y: 0 } },
+        ],
+      },
+      200,
+      200,
+      { seamAllowanceCm: 1 }
+    );
+    expect(svg).toContain('class="seam-allowance"');
+    expect(svg).toContain("stroke-dasharray=\"8 10\"");
+    expect(svg).toContain('class="cut-marker"');
+  });
+
   it("renders print svg with page dimensions", () => {
     const svg = renderPieceToPrintSvg(
       {
@@ -149,7 +169,9 @@ describe("renderDraftToSvg", () => {
     expect(svg).toContain("<svg");
     expect(svg).toContain("<path d=");
     expect(svg).toMatch(/width="\d+"/);
-    expect(svg).toMatch(/viewBox="0 0 \d+ \d+"/);
+    expect(svg).toMatch(/viewBox="[^"]+"/);
+    expect(svg).toContain("seam-allowance");
+    expect(svg).toContain("cut-marker");
   });
 
   it("labels pieces with no geometry at default position", () => {

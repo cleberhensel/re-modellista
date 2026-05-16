@@ -13,6 +13,7 @@ import {
   type ProductId,
 } from "./catalog/products.js";
 import { exportDraftToPdf, pdfFilename } from "./render/pdf.js";
+import type { RenderOptions } from "./render/svg.js";
 import { renderDraftToSvg } from "./render/svg.js";
 
 const SLIDER_DOM: Record<string, string> = {
@@ -249,6 +250,14 @@ function applyCompositionDefaults(): void {
   syncCompositionVisibility();
 }
 
+function renderOptions(): RenderOptions {
+  const options = draftOptions();
+  return {
+    seamAllowanceCm: options.seamAllowanceCm ?? 1,
+    pxPerCm: options.pxPerCm,
+  };
+}
+
 function draftOptions(): DraftOptions {
   const product = getProduct(currentProductId)!;
   const presetId = compositionPresetSelect()?.value ?? "custom";
@@ -404,7 +413,7 @@ function render(): void {
     null,
     2
   );
-  previewEl.innerHTML = renderDraftToSvg(result);
+  previewEl.innerHTML = renderDraftToSvg(result, renderOptions());
   lastDraftResult = result;
   const downloadBtn = document.getElementById("download-pdf");
   if (downloadBtn instanceof HTMLButtonElement) {
@@ -501,7 +510,7 @@ downloadPdfBtn.addEventListener("click", async () => {
   const label = downloadPdfBtn.textContent;
   downloadPdfBtn.textContent = "A gerar PDF…";
   try {
-    const blob = await exportDraftToPdf(draftResult);
+    const blob = await exportDraftToPdf(draftResult, renderOptions());
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

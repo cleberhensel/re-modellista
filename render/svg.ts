@@ -1,5 +1,16 @@
+import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
 import type { DraftResult, PathSegment, PatternPiece, Point2 } from "../engine/types.js";
 import { layoutPieces } from "./layout.js";
+import { CUT_MARKER_VIEW_OUTSET_PX, cutMarkersSvg } from "./cut-markers.js";
+import {
+  DEFAULT_SEAM_ALLOWANCE_CM,
+  seamAllowanceSegments,
+} from "./seam-allowance.js";
+
+export interface RenderOptions {
+  seamAllowanceCm?: number;
+  pxPerCm?: number;
+}
 
 function fmt(p: Point2): string {
   return `${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
@@ -60,11 +71,19 @@ function pieceLabel(id: string): string {
   return labels[id] ?? id;
 }
 
-function renderPieceSvg(piece: PatternPiece, forPrint = false): string {
+function renderPieceSvg(
+  piece: PatternPiece,
+  forPrint = false,
+  options: RenderOptions = {}
+): string {
   const solid = piece.paths.filter((s) => !isDashed(s));
-  const dashed = piece.paths.filter((s) => isDashed(s));
+  const construction = piece.paths.filter((s) => isDashed(s));
+  const allowanceCm = options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM;
+  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
+  const seamAllowance = seamAllowanceSegments(solid, allowanceCm, pxPerCm);
   const solidD = segmentsToPathD(solid);
-  const dashedD = segmentsToPathD(dashed);
+  const constructionD = segmentsToPathD(construction);
+  const seamD = segmentsToPathD(seamAllowance);
   let minX = Infinity;
   let minY = Infinity;
   for (const seg of piece.paths) {
@@ -87,15 +106,25 @@ function renderPieceSvg(piece: PatternPiece, forPrint = false): string {
   const dashedStroke = forPrint
     ? 'stroke="#666" stroke-width="1" stroke-dasharray="8 5"'
     : 'stroke="#6b7280" stroke-width="1" stroke-dasharray="8 5" vector-effect="non-scaling-stroke"';
+  const seamStroke = forPrint
+    ? 'stroke="#444" stroke-width="1" stroke-dasharray="8 10"'
+    : 'stroke="#52525b" stroke-width="1" stroke-dasharray="8 10" vector-effect="non-scaling-stroke"';
   const parts: string[] = [
     `<g class="piece" data-piece="${piece.id}">`,
     `<text x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" font-size="10" font-family="system-ui,sans-serif" fill="#000">${pieceLabel(piece.id)}</text>`,
   ];
+  if (seamD) {
+    parts.push(`<path d="${seamD}" fill="none" ${seamStroke} class="seam-allowance"/>`);
+    const markers = cutMarkersSvg(seamAllowance, forPrint);
+    if (markers) {
+      parts.push(markers);
+    }
+  }
   if (solidD) {
     parts.push(`<path d="${solidD}" fill="none" ${solidStroke}/>`);
   }
-  if (dashedD) {
-    parts.push(`<path d="${dashedD}" fill="none" ${dashedStroke}/>`);
+  if (constructionD) {
+    parts.push(`<path d="${constructionD}" fill="none" ${dashedStroke}/>`);
   }
   parts.push("</g>");
   return parts.join("\n");
@@ -104,17 +133,26 @@ function renderPieceSvg(piece: PatternPiece, forPrint = false): string {
 export function renderPieceToPrintSvg(
   piece: PatternPiece,
   pageWidth: number,
-  pageHeight: number
+  pageHeight: number,
+  options: RenderOptions = {}
 ): string {
-  const body = renderPieceSvg(piece, true);
+  const body = renderPieceSvg(piece, true, options);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">${body}</svg>`;
 }
 
-export function renderDraftToSvg(draftResult: DraftResult): string {
+export function renderDraftToSvg(
+  draftResult: DraftResult,
+  options: RenderOptions = {}
+): string {
   const drawable = draftResult.pieces.filter((p) => p.paths.length > 0);
   const { pieces, bounds } = layoutPieces(drawable, {
     productId: draftResult.productId,
+    seamAllowanceCm: options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM,
+    pxPerCm: options.pxPerCm,
   });
-  const body = pieces.map((piece) => renderPieceSvg(piece)).join("\n");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${bounds.width}" height="${bounds.height}" viewBox="0 0 ${bounds.width} ${bounds.height}">${body}</svg>`;
+  const body = pieces.map((piece) => renderPieceSvg(piece, false, options)).join("\n");
+  const pad = CUT_MARKER_VIEW_OUTSET_PX;
+  const w = bounds.width + pad;
+  const h = bounds.height + pad;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${body}</svg>`;
 }

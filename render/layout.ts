@@ -1,4 +1,9 @@
 import type { DraftBounds, PathSegment, PatternPiece, Point2 } from "../engine/types.js";
+import { CUT_MARKER_VIEW_OUTSET_PX } from "./cut-markers.js";
+import {
+  DEFAULT_SEAM_ALLOWANCE_CM,
+  seamAllowancePaddingPx,
+} from "./seam-allowance.js";
 
 export interface PieceBounds {
   minX: number;
@@ -13,6 +18,32 @@ export interface LayoutOptions {
   productId?: string;
   gap?: number;
   padding?: number;
+  seamAllowanceCm?: number;
+  pxPerCm?: number;
+}
+
+export function expandPieceBounds(
+  bounds: PieceBounds,
+  seamPadPx: number
+): PieceBounds {
+  if (seamPadPx <= 0) return bounds;
+  return {
+    minX: bounds.minX - seamPadPx,
+    minY: bounds.minY - seamPadPx,
+    maxX: bounds.maxX + seamPadPx,
+    maxY: bounds.maxY + seamPadPx,
+    width: bounds.width + seamPadPx * 2,
+    height: bounds.height + seamPadPx * 2,
+  };
+}
+
+export function pieceLayoutBounds(
+  piece: PatternPiece,
+  seamAllowanceCm = DEFAULT_SEAM_ALLOWANCE_CM,
+  pxPerCm?: number
+): PieceBounds {
+  const pad = seamAllowancePaddingPx(seamAllowanceCm, pxPerCm);
+  return expandPieceBounds(pieceBounds(piece), pad);
 }
 
 function collectPoints(seg: PathSegment): Point2[] {
@@ -142,7 +173,6 @@ export function layoutPieces(
   const gap = options.gap ?? 56;
   const padding = options.padding ?? 24;
   const productId = options.productId;
-
   if (pieces.length === 0) {
     return { pieces: [], bounds: { width: 400, height: 400 } };
   }
@@ -156,11 +186,16 @@ export function layoutPieces(
   const laidOut: PatternPiece[] = [];
 
   for (const piece of sorted) {
-    const b = pieceBounds(piece);
-    if (b.width <= 0 && b.height <= 0) {
+    const raw = pieceBounds(piece);
+    if (raw.width <= 0 && raw.height <= 0) {
       laidOut.push(piece);
       continue;
     }
+    const b = pieceLayoutBounds(
+      piece,
+      options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM,
+      options.pxPerCm
+    );
     if (cursorX > padding && cursorX + b.width > maxRowWidth) {
       cursorX = padding;
       rowY += rowHeight + gap;
@@ -178,12 +213,18 @@ export function layoutPieces(
     }
   }
 
-  let maxX = padding;
-  let maxY = padding;
+  const edgePad = padding + CUT_MARKER_VIEW_OUTSET_PX;
+
+  let maxX = edgePad;
+  let maxY = edgePad;
   for (const piece of laidOut) {
-    const b = pieceBounds(piece);
-    if (b.maxX + padding > maxX) maxX = b.maxX + padding;
-    if (b.maxY + padding > maxY) maxY = b.maxY + padding;
+    const b = pieceLayoutBounds(
+      piece,
+      options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM,
+      options.pxPerCm
+    );
+    if (b.maxX + edgePad > maxX) maxX = b.maxX + edgePad;
+    if (b.maxY + edgePad > maxY) maxY = b.maxY + edgePad;
   }
 
   return {

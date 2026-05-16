@@ -60,7 +60,7 @@ function pieceLabel(id: string): string {
   return labels[id] ?? id;
 }
 
-function renderPieceSvg(piece: PatternPiece): string {
+function renderPieceSvg(piece: PatternPiece, forPrint = false): string {
   const solid = piece.paths.filter((s) => !isDashed(s));
   const dashed = piece.paths.filter((s) => isDashed(s));
   const solidD = segmentsToPathD(solid);
@@ -81,22 +81,33 @@ function renderPieceSvg(piece: PatternPiece): string {
   }
   const labelX = Number.isFinite(minX) ? minX : 0;
   const labelY = Number.isFinite(minY) ? Math.max(minY - 8, 10) : 10;
+  const solidStroke = forPrint
+    ? 'stroke="#000" stroke-width="1.5"'
+    : 'stroke="#111" stroke-width="1.5" vector-effect="non-scaling-stroke"';
+  const dashedStroke = forPrint
+    ? 'stroke="#666" stroke-width="1" stroke-dasharray="8 5"'
+    : 'stroke="#6b7280" stroke-width="1" stroke-dasharray="8 5" vector-effect="non-scaling-stroke"';
   const parts: string[] = [
     `<g class="piece" data-piece="${piece.id}">`,
-    `<text x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" class="piece-label">${pieceLabel(piece.id)}</text>`,
+    `<text x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" font-size="10" font-family="system-ui,sans-serif" fill="#000">${pieceLabel(piece.id)}</text>`,
   ];
   if (solidD) {
-    parts.push(
-      `<path d="${solidD}" fill="none" stroke="#111" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
-    );
+    parts.push(`<path d="${solidD}" fill="none" ${solidStroke}/>`);
   }
   if (dashedD) {
-    parts.push(
-      `<path d="${dashedD}" fill="none" stroke="#6b7280" stroke-width="1" stroke-dasharray="8 5" vector-effect="non-scaling-stroke"/>`
-    );
+    parts.push(`<path d="${dashedD}" fill="none" ${dashedStroke}/>`);
   }
   parts.push("</g>");
   return parts.join("\n");
+}
+
+export function renderPieceToPrintSvg(
+  piece: PatternPiece,
+  pageWidth: number,
+  pageHeight: number
+): string {
+  const body = renderPieceSvg(piece, true);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">${body}</svg>`;
 }
 
 export function renderDraftToSvg(draftResult: DraftResult): string {

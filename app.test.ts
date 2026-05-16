@@ -22,6 +22,7 @@ const fullDom = `
   ${measure("designEaseBust", "6", "Folga")}
   ${measure("coatLength", "65", "Casaco")}
   <button id="render" type="button">Gerar</button>
+  <button id="download-pdf" type="button">PDF</button>
   <p id="guardrail-hint" hidden></p>
   <pre id="formulas"></pre>
   <pre id="context"></pre>
@@ -32,9 +33,17 @@ const slider = (id: string, value: string) =>
   `<input id="${id}" type="range" value="${value}" step="1">` +
   `<output id="${id}-out" for="${id}">${value}</output>`;
 
+const exportDraftToPdfMock = vi.fn().mockResolvedValue(new Blob(["%PDF"]));
+
+vi.mock("./render/pdf.js", () => ({
+  exportDraftToPdf: (...args: unknown[]) => exportDraftToPdfMock(...args),
+  pdfFilename: (id: string) => `${id}-molde.pdf`,
+}));
+
 afterEach(() => {
   vi.resetModules();
   document.body.innerHTML = "";
+  exportDraftToPdfMock.mockClear();
 });
 
 describe("app", () => {
@@ -54,6 +63,47 @@ describe("app", () => {
     expect(document.getElementById("formulas")?.textContent).toContain(
       "bustQuarterCm"
     );
+  });
+
+  it("downloads pdf at real scale", async () => {
+    document.body.innerHTML = fullDom;
+    const clickMock = vi.fn();
+    const revokeMock = vi.fn();
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:test"),
+      revokeObjectURL: revokeMock,
+    });
+    vi.spyOn(document, "createElement").mockImplementation((tag) => {
+      const el = document.createElementNS("http://www.w3.org/1999/xhtml", tag);
+      if (tag === "a") {
+        el.click = clickMock;
+      }
+      return el as HTMLElement;
+    });
+    await import("./app.js");
+    const downloadBtn = document.getElementById(
+      "download-pdf"
+    ) as HTMLButtonElement;
+    expect(downloadBtn.disabled).toBe(false);
+    downloadBtn.click();
+    await vi.waitFor(() => expect(exportDraftToPdfMock).toHaveBeenCalled());
+    expect(clickMock).toHaveBeenCalled();
+    expect(revokeMock).toHaveBeenCalledWith("blob:test");
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("alerts when pdf export fails", async () => {
+    document.body.innerHTML = fullDom;
+    exportDraftToPdfMock.mockRejectedValueOnce(new Error("pdf_fail"));
+    const alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
+    await import("./app.js");
+    const downloadBtn = document.getElementById(
+      "download-pdf"
+    ) as HTMLButtonElement;
+    downloadBtn.click();
+    await vi.waitFor(() => expect(alertMock).toHaveBeenCalled());
+    alertMock.mockRestore();
   });
 
   it("exposes product id in context panel", async () => {
@@ -86,6 +136,14 @@ describe("app", () => {
       ""
     );
     await expect(import("./app.js")).rejects.toThrow("missing slider #bust");
+  });
+
+  it("throws when download button is missing", async () => {
+    document.body.innerHTML = fullDom.replace(
+      '<button id="download-pdf" type="button">PDF</button>\n  ',
+      ""
+    );
+    await expect(import("./app.js")).rejects.toThrow("missing #download-pdf");
   });
 
   it("throws when render button is missing", async () => {

@@ -1,11 +1,12 @@
 import { draft, getGuardrails, isBlouseStable } from "./engine/index.js";
-import type { DraftOptions, Measurements } from "./engine/types.js";
+import type { DraftOptions, DraftResult, Measurements } from "./engine/types.js";
 import type { MeasurementKey } from "./engine/guardrails/types.js";
 import {
   getProduct,
   listCatalogGroups,
   type ProductId,
 } from "./catalog/products.js";
+import { exportDraftToPdf, pdfFilename } from "./render/pdf.js";
 import { renderDraftToSvg } from "./render/svg.js";
 
 const SLIDER_DOM: Record<string, string> = {
@@ -41,6 +42,7 @@ const SLIDER_LABELS: Record<string, string> = {
 };
 
 let currentProductId: ProductId = "blusa";
+let lastDraftResult: DraftResult | null = null;
 
 function productSelect(): HTMLSelectElement {
   const el = document.getElementById("product");
@@ -214,6 +216,12 @@ function render(): void {
     2
   );
   previewEl.innerHTML = renderDraftToSvg(result);
+  lastDraftResult = result;
+  const downloadBtn = document.getElementById("download-pdf");
+  if (downloadBtn instanceof HTMLButtonElement) {
+    const hasPieces = result.pieces.some((p) => p.paths.length > 0);
+    downloadBtn.disabled = !hasPieces || !!result.error;
+  }
   if (result.error) {
     previewEl.insertAdjacentHTML(
       "beforeend",
@@ -262,6 +270,35 @@ if (!(renderBtn instanceof HTMLButtonElement)) {
   throw new Error("missing #render");
 }
 renderBtn.addEventListener("click", render);
+
+const downloadPdfBtn = document.getElementById("download-pdf");
+if (!(downloadPdfBtn instanceof HTMLButtonElement)) {
+  throw new Error("missing #download-pdf");
+}
+downloadPdfBtn.disabled = true;
+downloadPdfBtn.addEventListener("click", async () => {
+  const draftResult = lastDraftResult;
+  if (!draftResult) return;
+  downloadPdfBtn.disabled = true;
+  const label = downloadPdfBtn.textContent;
+  downloadPdfBtn.textContent = "A gerar PDF…";
+  try {
+    const blob = await exportDraftToPdf(draftResult);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = pdfFilename(draftResult.productId);
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    window.alert("Não foi possível gerar o PDF. Gere o molde primeiro.");
+  } finally {
+    downloadPdfBtn.textContent = label;
+    const hasPieces =
+      lastDraftResult?.pieces.some((p) => p.paths.length > 0) ?? false;
+    downloadPdfBtn.disabled = !hasPieces || !!lastDraftResult?.error;
+  }
+});
 
 applyProduct("blusa");
 render();

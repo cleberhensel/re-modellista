@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildContext } from "../engine/context.js";
 import { draft } from "../engine/index.js";
-import { pieceToSvgPath, renderDraftToSvg } from "./svg.js";
+import { pieceToSvgPath, renderDraftToSvg, renderPieceToPrintSvg } from "./svg.js";
 import type { Measurements, PatternPiece } from "../engine/types.js";
 
 const measurements: Measurements = {
@@ -112,6 +112,33 @@ describe("pieceToSvgPath", () => {
     expect(d).toBe(
       "M 0.00 0.00 L 10.00 10.00 M 1.00 1.00 C 2.00 2.00 3.00 3.00 4.00 4.00"
     );
+  });
+});
+
+describe("renderPieceToPrintSvg", () => {
+  it("places label at origin when piece has no geometry", () => {
+    const svg = renderPieceToPrintSvg({ id: "empty", paths: [] }, 100, 100);
+    expect(svg).toContain('y="10.00"');
+  });
+
+  it("renders print svg with page dimensions", () => {
+    const svg = renderPieceToPrintSvg(
+      {
+        id: "blouse-front",
+        paths: [
+          {
+            type: "line",
+            from: { x: 10, y: 20 },
+            to: { x: 110, y: 120 },
+          },
+        ],
+      },
+      200,
+      180
+    );
+    expect(svg).toContain('width="200"');
+    expect(svg).toContain('viewBox="0 0 200 180"');
+    expect(svg).not.toContain("vector-effect");
   });
 });
 

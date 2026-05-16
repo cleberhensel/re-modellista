@@ -27,6 +27,7 @@ function buildDom(hintTag = "p"): string {
   <div class="measure hidden" data-measure="coatLength">${slider("coatLength", "65")}</div>
   <${hintTag} id="guardrail-hint" hidden></${hintTag}>
   <button id="render" type="button">Gerar</button>
+  <button id="download-pdf" type="button">PDF</button>
   <pre id="formulas"></pre>
   <pre id="context"></pre>
   <motion id="preview"></motion>

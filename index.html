@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Remodellista</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Remodellista</h1>
+    <p>Medidas em cm → fórmulas → molde (SVG)</p>
+  </header>
+  <main class="layout">
+    <section class="panel sidebar">
+      <h2>Medidas</h2>
+      <div class="measure">
+        <div class="measure-head">
+          <span>Busto</span>
+          <output id="bust-out" for="bust">92</output>
+        </div>
+        <input id="bust" type="range" value="92" step="1">
+      </div>
+      <div class="measure">
+        <div class="measure-head">
+          <span>Comprimento</span>
+          <output id="height-out" for="height">45</output>
+        </div>
+        <input id="height" type="range" value="45" step="1">
+      </div>
+      <div class="measure">
+        <div class="measure-head">
+          <span>Cintura</span>
+          <output id="waist-out" for="waist">81</output>
+        </div>
+        <input id="waist" type="range" value="81" step="1">
+      </div>
+      <div class="measure">
+        <div class="measure-head">
+          <span>Punho</span>
+          <output id="wrist-out" for="wrist">12</output>
+        </div>
+        <input id="wrist" type="range" value="12" step="1">
+      </div>
+      <div class="measure">
+        <div class="measure-head">
+          <span>Manga</span>
+          <output id="sleeve-out" for="sleeve">27</output>
+        </div>
+        <input id="sleeve" type="range" value="27" step="1">
+      </div>
+      <p class="guardrail-hint" id="guardrail-hint" hidden></p>
+      <button id="render" type="button">Gerar</button>
+    </section>
+    <section class="panel panel-mold">
+      <h2>Molde</h2>
+      <div class="preview" id="preview"></div>
+    </section>
+    <section class="panel formulas sidebar">
+      <h2>Fórmulas (resultado)</h2>
+      <pre id="formulas"></pre>
+      <h2>Contexto</h2>
+      <pre id="context"></pre>
+    </section>
+  </main>
+  <script type="module" src="/app.ts"></script>
+</body>
+</html>

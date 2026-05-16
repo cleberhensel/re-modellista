@@ -4,12 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Remodellista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Varela+Round&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>Remodellista</h1>
-    <p>Medidas em cm → fórmulas → molde (SVG)</p>
+  <header class="app-header">
+    <div class="app-header-brand">
+      <h1 class="app-title">Remodellista</h1>
+      <p class="app-tagline">Medidas em cm → fórmulas → molde (SVG)</p>
+    </div>
   </header>
   <main class="layout">
     <section class="panel sidebar">
@@ -169,8 +175,8 @@
       <details class="sidebar-section" open>
         <summary>Ações</summary>
         <div class="sidebar-section-body action-row">
-          <button id="render" type="button">Gerar</button>
-          <button id="download-pdf" type="button">PDF (tamanho real)</button>
+          <button id="render" type="button" class="btn btn-primary">Gerar</button>
+          <button id="download-pdf" type="button" class="btn btn-secondary">PDF (tamanho real)</button>
         </div>
       </details>
     </section>

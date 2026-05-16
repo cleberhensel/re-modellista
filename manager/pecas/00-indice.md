@@ -37,6 +37,13 @@ Ficha detalhada por peça (medidas, construção, matemática, derivações, est
 
 Projeto autocontido: `remodellista/` (raiz do repositório irmão). Comandos: `npm run dev`, `npm test`, `npm run test:coverage`.
 
+## Atualização de algoritmos (pós-implementação)
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [plan-update/00-indice-update.md](plan-update/00-indice-update.md) | Correção geometria — **produtos completos**, fórmulas, paridade legado |
+| [plan-update/00-plano-geral-update.md](plan-update/00-plano-geral-update.md) | Ondas A–D, dependências |
+
 ## Planeamento de implementação (motor TypeScript)
 
 | Documento | Conteúdo |

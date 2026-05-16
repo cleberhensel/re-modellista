@@ -36,6 +36,7 @@ describe("integration", () => {
     "camisa",
     "saia-reta",
     "calca",
+    "bermuda",
     "vestido",
     "top-sem-mangas",
     "punho",
@@ -63,6 +64,15 @@ describe("integration", () => {
       expect(result.bounds.width).toBeGreaterThan(0);
     });
   }
+
+  it("drafts saia-reta with optional waistband", () => {
+    const result = draftProduct(
+      "saia-reta",
+      { waist: 70, hip: 96, hipDepth: 20, skirtLength: 60 },
+      { includeWaistband: true }
+    );
+    expect(result.pieces.length).toBe(3);
+  });
 
   it("drafts vestido with four pieces", () => {
     const result = draftProduct("vestido", {

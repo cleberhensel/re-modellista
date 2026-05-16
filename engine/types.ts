@@ -16,8 +16,9 @@ export interface SkirtMeasurements {
 export interface PantMeasurements {
   waist: number;
   hip: number;
-  crotchDepth: number;
+  crotchDepth?: number;
   inseam: number;
+  outseam?: number;
 }
 
 export interface DressMeasurements extends BodiceMeasurements {
@@ -91,7 +92,8 @@ export interface SkirtContext {
   measurements: SkirtMeasurements;
   k: number;
   startOne: number;
-  waistQuarterPx: number;
+  waistFrontQuarterPx: number;
+  waistBackQuarterPx: number;
   hipQuarterPx: number;
   hipLineY: number;
   hemY: number;
@@ -158,4 +160,7 @@ export interface DraftOptions {
   designEaseBust?: number;
   coatLength?: number;
   fabricProfileId?: string;
+  includeWaistband?: boolean;
+  legLengthCm?: number;
+  sleeveCapScale?: number;
 }

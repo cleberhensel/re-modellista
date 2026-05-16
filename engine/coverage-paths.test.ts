@@ -3,6 +3,7 @@ import { draftProduct } from "./registry.js";
 import { buildContext } from "./context.js";
 import * as skirtModule from "./skirt-context.js";
 import * as blouseFrontModule from "./pieces/blouse-front.js";
+import * as blouseBackModule from "./pieces/blouse-back.js";
 import { draftDress } from "./products/dress.js";
 import { blouseStability, blouseGuardrails } from "./guardrails/blouse.js";
 import * as checksModule from "./guardrails/checks.js";
@@ -21,7 +22,11 @@ import { goldenBlouseFrontCollarEnd } from "./fixtures/blouse-golden.js";
 import { computeArmholePoints } from "./armhole.js";
 import { draftBlouseFront } from "./pieces/blouse-front.js";
 import { draftBlouseBack } from "./pieces/blouse-back.js";
-import { armholeLengthFromContext, draftSleevePiece } from "./pieces/sleeve.js";
+import {
+  armholeLengthFromContext,
+  armholeLengthsFromContext,
+  draftSleevePiece,
+} from "./pieces/sleeve.js";
 import { createGuardrails } from "./guardrails/util.js";
 import { addSleeveHandle } from "./sleeve-handles.js";
 import { point } from "./geometry.js";
@@ -37,15 +42,18 @@ const m: Measurements = {
 
 describe("coverage paths", () => {
   it("covers dress waist mismatch branch", () => {
-    vi.spyOn(skirtModule, "buildSkirtContext").mockReturnValue({
+    const badSkirt = {
       measurements: { waist: 70, hip: 96, hipDepth: 20, skirtLength: 60 },
       k: 28.347,
       startOne: 43.347,
-      waistQuarterPx: 999,
+      waistFrontQuarterPx: 999,
+      waistBackQuarterPx: 999,
       hipQuarterPx: 600,
       hipLineY: 100,
       hemY: 500,
-    });
+    };
+    vi.spyOn(skirtModule, "buildSkirtContext").mockReturnValue(badSkirt);
+    vi.spyOn(skirtModule, "resolveWaistMismatch").mockReturnValue(badSkirt);
     expect(
       draftDress({
         ...m,
@@ -55,6 +63,23 @@ describe("coverage paths", () => {
         skirtLength: 60,
       }).error
     ).toBe("waist_mismatch");
+    vi.restoreAllMocks();
+  });
+
+  it("covers armhole lengths back fallback", () => {
+    vi.spyOn(blouseFrontModule, "draftBlouseFront").mockReturnValue({
+      id: "blouse-front",
+      paths: [{ type: "line", from: point(0, 0), to: point(1, 1) }],
+      points: { intersection: { x: 100, y: 200 } },
+    });
+    vi.spyOn(blouseBackModule, "draftBlouseBack").mockReturnValue({
+      id: "blouse-back",
+      paths: [{ type: "line", from: point(0, 0), to: point(1, 1) }],
+      points: {},
+    });
+    const lengths = armholeLengthsFromContext(buildContext(m));
+    expect(lengths?.front).toBeGreaterThan(0);
+    expect(lengths?.back).toBeGreaterThan(0);
     vi.restoreAllMocks();
   });
 

@@ -9,7 +9,7 @@ Ficha detalhada por peça (medidas, construção, matemática, derivações, est
 | [blusa-frente.md](blusa-frente.md) | Blusa / bodice — frente | Implementado | Implementado |
 | [blusa-costas.md](blusa-costas.md) | Blusa / bodice — costas | Implementado | Implementado |
 | [manga.md](manga.md) | Manga set-in | Implementado | Implementado |
-| [camisa.md](camisa.md) | Camisa (fluxo + elementos) | Parcial (bodice) | Implementado |
+| [camisa.md](camisa.md) | Camisa (fluxo + elementos) | Parcial (bodice) | Implementado (8 peças) |
 
 ## Peças inferiores e corpo inteiro
 
@@ -17,6 +17,7 @@ Ficha detalhada por peça (medidas, construção, matemática, derivações, est
 |----------|------|------------|--------------|
 | [saia-reta.md](saia-reta.md) | Saia reta (bloco) | Não | Implementado |
 | [calca.md](calca.md) | Calça (bloco) | Protótipo | Implementado |
+| [calca.md](calca.md) | Bermuda | Protótipo | Implementado (`bermuda`) |
 | [vestido.md](vestido.md) | Vestido (união blusa + saia) | Não | Implementado |
 
 ## Variantes e especializações

@@ -24,9 +24,9 @@ describe("draftDress", () => {
       hipDepth: m.hipDepth,
       skirtLength: m.skirtLength,
     });
-    skirtCtx.waistQuarterPx = blouseCtx.hipPx + blouseCtx.k * 5;
+    skirtCtx.waistFrontQuarterPx = blouseCtx.hipPx + blouseCtx.k * 5;
     const waistBlouse = blouseCtx.hipPx;
-    const waistSkirt = skirtCtx.waistQuarterPx;
+    const waistSkirt = skirtCtx.waistFrontQuarterPx;
     if (Math.abs(waistBlouse - waistSkirt) > blouseCtx.k * 2) {
       expect(true).toBe(true);
     }

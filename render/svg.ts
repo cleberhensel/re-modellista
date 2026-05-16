@@ -101,7 +101,9 @@ function renderPieceSvg(piece: PatternPiece): string {
 
 export function renderDraftToSvg(draftResult: DraftResult): string {
   const drawable = draftResult.pieces.filter((p) => p.paths.length > 0);
-  const { pieces, bounds } = layoutPieces(drawable);
+  const { pieces, bounds } = layoutPieces(drawable, {
+    productId: draftResult.productId,
+  });
   const body = pieces.map((piece) => renderPieceSvg(piece)).join("\n");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${bounds.width}" height="${bounds.height}" viewBox="0 0 ${bounds.width} ${bounds.height}">${body}</svg>`;
 }

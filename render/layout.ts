@@ -9,6 +9,12 @@ export interface PieceBounds {
   height: number;
 }
 
+export interface LayoutOptions {
+  productId?: string;
+  gap?: number;
+  padding?: number;
+}
+
 function collectPoints(seg: PathSegment): Point2[] {
   if (seg.type === "move") return [seg.to];
   if (seg.type === "line") return [seg.from, seg.to];
@@ -93,20 +99,50 @@ const PIECE_LAYOUT_ORDER: Record<string, number> = {
   "collar-stand": 3,
   "collar-fall": 4,
   cuff: 5,
-  waistband: 0,
-  "chest-pocket": 1,
-  placket: 0,
+  placket: 6,
+  "chest-pocket": 7,
+  waistband: 8,
+};
+
+const PRODUCT_ROW_BREAK_AFTER: Record<string, number> = {
+  vestido: 1,
+  camisa: 3,
+  casaco: 2,
+};
+
+const PRODUCT_MAX_ROW_WIDTH: Record<string, number> = {
+  vestido: 1600,
+  blusa: 5200,
+  camisa: 5200,
+  "saia-reta": 5200,
+  calca: 5200,
+  bermuda: 5200,
 };
 
 function layoutOrder(piece: PatternPiece): number {
   return PIECE_LAYOUT_ORDER[piece.id] ?? 99;
 }
 
+function shouldBreakRow(productId: string | undefined, pieceOrder: number): boolean {
+  if (!productId) return false;
+  const breakAfter = PRODUCT_ROW_BREAK_AFTER[productId];
+  if (breakAfter === undefined) return false;
+  return pieceOrder === breakAfter;
+}
+
 export function layoutPieces(
   pieces: PatternPiece[],
-  gap = 56,
-  padding = 24
+  gapOrOptions: number | LayoutOptions = 56,
+  paddingLegacy?: number
 ): { pieces: PatternPiece[]; bounds: DraftBounds } {
+  const options: LayoutOptions =
+    typeof gapOrOptions === "number"
+      ? { gap: gapOrOptions, padding: paddingLegacy ?? 24 }
+      : gapOrOptions;
+  const gap = options.gap ?? 56;
+  const padding = options.padding ?? 24;
+  const productId = options.productId;
+
   if (pieces.length === 0) {
     return { pieces: [], bounds: { width: 400, height: 400 } };
   }
@@ -114,7 +150,9 @@ export function layoutPieces(
   let cursorX = padding;
   let rowY = padding;
   let rowHeight = 0;
-  const maxRowWidth = 5200;
+  const maxRowWidth = productId
+    ? (PRODUCT_MAX_ROW_WIDTH[productId] ?? 5200)
+    : 5200;
   const laidOut: PatternPiece[] = [];
 
   for (const piece of sorted) {
@@ -133,6 +171,11 @@ export function layoutPieces(
     laidOut.push(translatePiece(piece, dx, dy));
     cursorX += b.width + gap;
     rowHeight = Math.max(rowHeight, b.height);
+    if (shouldBreakRow(productId, layoutOrder(piece))) {
+      cursorX = padding;
+      rowY += rowHeight + gap;
+      rowHeight = 0;
+    }
   }
 
   let maxX = padding;

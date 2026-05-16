@@ -4,6 +4,7 @@ import { draftCollarProduct } from "./products/collar.js";
 import { draftCuffProduct } from "./products/cuff.js";
 import { draftDress } from "./products/dress.js";
 import { draftKnit } from "./products/knit.js";
+import { draftBermuda } from "./products/bermuda.js";
 import { draftPant } from "./products/pant.js";
 import { draftPlacketProduct } from "./products/placket.js";
 import { draftPocketProduct } from "./products/pocket.js";
@@ -25,6 +26,7 @@ const PRODUCT_DRAFTERS: Record<string, ProductDraftFn> = {
   camisa: draftShirt,
   "saia-reta": draftStraightSkirt,
   calca: draftPant,
+  bermuda: draftBermuda,
   vestido: draftDress,
   "top-sem-mangas": draftSleevelessTop,
   punho: draftCuffProduct,

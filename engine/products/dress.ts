@@ -1,6 +1,6 @@
 import { buildContext } from "../context.js";
 import { computeBounds } from "../bounds.js";
-import { buildSkirtContext } from "../skirt-context.js";
+import { buildSkirtContext, resolveWaistMismatch } from "../skirt-context.js";
 import { draftBlouseBack } from "../pieces/blouse-back.js";
 import { draftBlouseFront } from "../pieces/blouse-front.js";
 import { draftSkirtBack } from "../pieces/skirt-back.js";
@@ -22,7 +22,7 @@ export function draftDress(
     },
     options
   );
-  const skirtCtx = buildSkirtContext(
+  let skirtCtx = buildSkirtContext(
     {
       waist: measurements.waist,
       hip: measurements.hip ?? measurements.waist + 10,
@@ -31,8 +31,9 @@ export function draftDress(
     },
     options
   );
-  const waistBlouse = Math.floor(blouseCtx.measurements.waist / 4) * blouseCtx.k;
-  const waistSkirt = skirtCtx.waistQuarterPx;
+  skirtCtx = resolveWaistMismatch(blouseCtx, skirtCtx);
+  const waistBlouse = blouseCtx.hipPx;
+  const waistSkirt = skirtCtx.waistFrontQuarterPx;
   if (Math.abs(waistBlouse - waistSkirt) > blouseCtx.k * 2) {
     return {
       productId: "vestido",

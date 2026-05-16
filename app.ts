@@ -1,7 +1,11 @@
 import { draft, getGuardrails, isBlouseStable } from "./engine/index.js";
 import type { DraftOptions, Measurements } from "./engine/types.js";
 import type { MeasurementKey } from "./engine/guardrails/types.js";
-import { getProduct, listProducts, type ProductId } from "./catalog/products.js";
+import {
+  getProduct,
+  listCatalogGroups,
+  type ProductId,
+} from "./catalog/products.js";
 import { renderDraftToSvg } from "./render/svg.js";
 
 const SLIDER_DOM: Record<string, string> = {
@@ -79,12 +83,17 @@ function draftOptions(): DraftOptions {
 function syncProductSelect(): void {
   const select = productSelect();
   select.innerHTML = "";
-  for (const p of listProducts()) {
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.label;
-    opt.disabled = !p.implemented;
-    select.appendChild(opt);
+  for (const group of listCatalogGroups()) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group.label;
+    for (const p of group.products) {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.label;
+      opt.disabled = !p.implemented;
+      optgroup.appendChild(opt);
+    }
+    select.appendChild(optgroup);
   }
   select.value = currentProductId;
 }

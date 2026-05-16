@@ -22,13 +22,55 @@ describe("layoutPieces", () => {
     expect(bb.minX).toBeGreaterThan(bf.maxX);
   });
 
+  it("translates move segments in layout", () => {
+    const piece = {
+      id: "move-piece",
+      paths: [
+        { type: "move" as const, to: { x: 100, y: 50 } },
+        {
+          type: "line" as const,
+          from: { x: 100, y: 50 },
+          to: { x: 200, y: 50 },
+        },
+      ],
+    };
+    const { pieces } = layoutPieces([piece], { gap: 10, padding: 5 });
+    const seg = pieces[0].paths[0];
+    expect(seg.type).toBe("move");
+    if (seg.type === "move") {
+      expect(seg.to.x).toBe(5);
+    }
+  });
+
+  it("preserves empty pieces and wraps wide rows", () => {
+    const empty = { id: "empty", paths: [] as const };
+    const wide = {
+      id: "blouse-front",
+      paths: [
+        {
+          type: "line" as const,
+          from: { x: 0, y: 0 },
+          to: { x: 4000, y: 500 },
+        },
+      ],
+    };
+    const { pieces } = layoutPieces([empty, wide, { ...wide, id: "blouse-back" }], {
+      productId: "camisa",
+      gap: 40,
+      padding: 20,
+    });
+    expect(pieces).toHaveLength(3);
+    const back = pieces.find((p) => p.id === "blouse-back")!;
+    expect(pieceBounds(back).minY).toBeGreaterThan(500);
+  });
+
   it("offsets shirt pieces in a row", () => {
     const result = draft(m, { productId: "camisa" });
-    const { pieces, bounds } = layoutPieces(result.pieces);
-    expect(pieces.length).toBe(3);
+    const { pieces, bounds } = layoutPieces(result.pieces, { productId: "camisa" });
+    expect(pieces.length).toBe(8);
     expect(bounds.width).toBeGreaterThan(800);
     const xs = pieces.map((p) => pieceBounds(p).minX);
-    expect(new Set(xs).size).toBe(3);
+    expect(new Set(xs).size).toBeGreaterThanOrEqual(3);
   });
 });
 

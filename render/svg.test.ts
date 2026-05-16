@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildContext } from "../engine/context.js";
 import { draft } from "../engine/index.js";
 import { pieceToSvgPath, renderDraftToSvg } from "./svg.js";
 import type { Measurements, PatternPiece } from "../engine/types.js";
@@ -122,6 +123,33 @@ describe("renderDraftToSvg", () => {
     expect(svg).toContain("<path d=");
     expect(svg).toMatch(/width="\d+"/);
     expect(svg).toMatch(/viewBox="0 0 \d+ \d+"/);
+  });
+
+  it("labels pieces with no geometry at default position", () => {
+    const ctx = buildContext(measurements);
+    const svg = renderDraftToSvg({
+      productId: "blusa",
+      ctx,
+      pieces: [{ id: "no-geometry", paths: [{ type: "move", to: { x: 0, y: 0 } }] }],
+      bounds: { width: 400, height: 400 },
+    });
+    expect(svg).toContain('y="10.00"');
+  });
+
+  it("labels pieces that use move segments for bounds", () => {
+    const ctx = buildContext(measurements);
+    const svg = renderDraftToSvg({
+      productId: "blusa",
+      ctx,
+      pieces: [
+        {
+          id: "move-only",
+          paths: [{ type: "move", to: { x: 80, y: 90 } }],
+        },
+      ],
+      bounds: { width: 400, height: 400 },
+    });
+    expect(svg).toContain("move-only");
   });
 
   it("renders multiple paths for full blouse", () => {

@@ -2,6 +2,8 @@ import { computeBounds } from "../bounds.js";
 import { buildSkirtContext } from "../skirt-context.js";
 import { draftSkirtBack } from "../pieces/skirt-back.js";
 import { draftSkirtFront } from "../pieces/skirt-front.js";
+import { draftWaistband } from "../pieces/waistband.js";
+import { buildContext } from "../context.js";
 import type {
   DraftOptions,
   DraftResult,
@@ -25,6 +27,13 @@ export function draftStraightSkirt(
   const skirtM = asSkirt(measurements);
   const ctx = buildSkirtContext(skirtM, options);
   const pieces = [draftSkirtFront(ctx), draftSkirtBack(ctx)];
+  if (options.includeWaistband) {
+    const bodiceCtx = buildContext(
+      { ...measurements, height: 4, bust: measurements.waist },
+      options
+    );
+    pieces.push(draftWaistband(bodiceCtx));
+  }
   return {
     productId: "saia-reta",
     ctx,

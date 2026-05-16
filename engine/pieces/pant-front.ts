@@ -7,36 +7,36 @@ export function draftPantFront(ctx: PantContext): PatternPiece {
     hipQuarterPx,
     waistQuarterPx,
     crotchLineY,
-    outseamPx,
     frontExtension,
     k,
+    measurements,
   } = ctx;
   const hipX = hipQuarterPx + startOne;
   const waistX = waistQuarterPx + startOne;
   const crotchX = startOne + frontExtension;
-  const inseamY = crotchLineY + ctx.measurements.inseam * k;
-  const outseamY = outseamPx + startOne;
+  const inseamY = crotchLineY + measurements.inseam * k;
   const cfTop = point(startOne, startOne);
+  const hipCrotch = point(hipX, crotchLineY);
 
   const outline = [
     lineSegment(cfTop, point(waistX, startOne)),
-    lineSegment(point(waistX, startOne), point(hipX, crotchLineY)),
-    lineSegment(point(hipX, crotchLineY), point(hipX, outseamY)),
-    lineSegment(point(hipX, outseamY), point(startOne, outseamY)),
-    lineSegment(point(startOne, outseamY), point(startOne, inseamY)),
+    lineSegment(point(waistX, startOne), hipCrotch),
+    lineSegment(hipCrotch, point(hipX, inseamY)),
+    lineSegment(point(hipX, inseamY), point(startOne, inseamY)),
     cubicSegment(
       point(startOne, inseamY),
-      point(startOne + k * 0.5, inseamY - frontExtension * 0.3),
-      point(crotchX, crotchLineY + frontExtension * 0.4),
+      point(startOne + k * 0.6, inseamY - frontExtension * 0.35),
+      point(crotchX - k * 0.3, crotchLineY + frontExtension * 0.25),
       point(crotchX, crotchLineY)
     ),
+    lineSegment(point(crotchX, crotchLineY), hipCrotch),
   ];
 
   return {
     id: "pant-front",
     paths: [
       ...outline,
-      lineSegment(cfTop, point(startOne, outseamY), true),
+      lineSegment(cfTop, point(startOne, inseamY), true),
     ],
   };
 }

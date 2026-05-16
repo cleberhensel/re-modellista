@@ -55,8 +55,21 @@ Legado: `{ one: 10 + k, two: 10 }`. Gola usa `startTwo` no handle. Motor usava s
 | Margens de costura tracejadas | Não portadas |
 | Retângulos guia (marcação) | Não portados (só construção) |
 | Linha horizontal `lineCenter` | Guia, não contorno |
-| Costas / manga | Não implementados |
+| Costas / manga | Implementados no motor (`blouse-back`, `sleeve`, produto `camisa` 8 peças) |
 | Export PDF com `DASH` | Não ligado |
+
+## Checklist pós plan-update (2026)
+
+| Produto | Golden / testes | Layout | Notas |
+|---------|-----------------|--------|-------|
+| `blusa` | `blouse-golden.ts`, tolerância 2 px | 2 colunas | Cava costas `armhole-back.ts` |
+| `camisa` | 8 peças, `shirt-golden.ts` | 2×4 | Colarinho = `pathLength` decotes |
+| `saia-reta` | `skirt-golden.ts` | 2 colunas | Ease Aldrich; `includeWaistband` |
+| `calca` / `bermuda` | `pant-golden.ts` | 2 colunas | CD fallback; bermuda `legLengthCm` |
+| `vestido` | integração 4 peças | 2×2 | `resolveWaistMismatch()` |
+| `top-sem-mangas` | `sleeveless` + offset cava | 2 colunas | |
+| `malha` | perfil knit | 2 colunas | `suppressDarts` |
+| `casaco` | integração | 3 peças | ease busto + `sleeveCapScale` |
 
 ## Validação automática
 

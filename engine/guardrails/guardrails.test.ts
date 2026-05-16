@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildContext } from "../context.js";
+import * as sleeveModule from "../pieces/sleeve.js";
 import { blouseFrontGuardrails, isBlouseFrontStable } from "./index.js";
+import { shirtGuardrails } from "./shirt.js";
 import { dartClearsArmhole, shoulderIntersects } from "./checks.js";
 import type { Measurements } from "../types.js";
 
@@ -47,6 +49,30 @@ describe("blouseFrontGuardrails", () => {
     );
     expect(isBlouseFrontStable(m)).toBe(true);
     expect(m.height).toBeGreaterThan(28);
+  });
+});
+
+describe("shirtGuardrails", () => {
+  it("resolve when cap ease is unavailable", () => {
+    vi.spyOn(sleeveModule, "draftSleevePiece").mockReturnValue({
+      id: "sleeve",
+      paths: [],
+      error: "sleeve_armhole_unavailable",
+    });
+    const m = shirtGuardrails.resolve(defaults, "bust");
+    expect(m.bust).toBe(defaults.bust);
+    vi.restoreAllMocks();
+  });
+
+  it("resolve when cap ease is outside target band", () => {
+    vi.spyOn(sleeveModule, "draftSleevePiece").mockReturnValue({
+      id: "sleeve",
+      paths: [{ type: "line", from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }],
+      points: { capEase: 800 },
+    });
+    const m = shirtGuardrails.resolve(defaults, "bust");
+    expect(m.bust).toBe(defaults.bust);
+    vi.restoreAllMocks();
   });
 });
 

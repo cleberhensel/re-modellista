@@ -35,6 +35,7 @@ const REGISTRY: Record<string, PieceGuardrails> = {
   camisa: shirtGuardrails,
   "saia-reta": skirtGuardrails,
   calca: pantGuardrails,
+  bermuda: pantGuardrails,
   vestido: dressGuardrails,
   "top-sem-mangas": sleevelessTopGuardrails,
   punho: cuffGuardrails,

@@ -8,6 +8,7 @@ export function draftSleevelessTop(
   const result = draftBlouse(measurements, {
     ...options,
     sleeveless: true,
+    armholeDepthOffsetCm: options.armholeDepthOffsetCm ?? 2,
     productId: "top-sem-mangas",
   });
   return { ...result, productId: "top-sem-mangas" };

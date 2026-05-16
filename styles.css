@@ -44,6 +44,17 @@ header p {
   font-size: 0.875rem;
 }
 
+.product-picker select optgroup {
+  font-weight: 600;
+  font-style: normal;
+  color: #52525b;
+}
+
+.product-picker select option {
+  font-weight: 400;
+  color: #18181b;
+}
+
 .measure.hidden {
   display: none;
 }

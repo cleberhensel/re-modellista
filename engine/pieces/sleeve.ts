@@ -1,22 +1,42 @@
 import {
+  computeArmholeBackPoints,
+  armholeBackPathSegments,
+} from "../armhole-back.js";
+import {
   computeArmholePoints,
   armholePathSegments,
 } from "../armhole.js";
 import { cubicSegment, lineSegment, point } from "../geometry.js";
 import { pathLength } from "../geometry/pathLength.js";
+import { draftBlouseBack } from "./blouse-back.js";
 import { draftBlouseFront } from "./blouse-front.js";
 import { applySleeveHandles, type SleeveVertex } from "../sleeve-handles.js";
 import { computeSleeveGrid } from "../sleeve-grid.js";
 import type { DraftContext, PatternPiece, PathSegment } from "../types.js";
 
 export function armholeLengthFromContext(ctx: DraftContext): number | null {
+  const lengths = armholeLengthsFromContext(ctx);
+  if (!lengths) return null;
+  return (lengths.front + lengths.back) / 2;
+}
+
+export function armholeLengthsFromContext(
+  ctx: DraftContext
+): { front: number; back: number } | null {
   const front = draftBlouseFront(ctx);
-  if (front.error || !front.points?.intersection) {
+  const back = draftBlouseBack(ctx);
+  if (front.error || back.error || !front.points?.intersection) {
     return null;
   }
-  const intersection = front.points.intersection as { y: number };
-  const ah = computeArmholePoints(ctx, intersection.y);
-  return pathLength(armholePathSegments(ah));
+  const frontY = (front.points.intersection as { y: number }).y;
+  const backIntersection = back.points?.intersection as { y: number } | undefined;
+  const backY = backIntersection?.y ?? frontY;
+  const ahFront = computeArmholePoints(ctx, frontY);
+  const ahBack = computeArmholeBackPoints(ctx, backY);
+  return {
+    front: pathLength(armholePathSegments(ahFront)),
+    back: pathLength(armholeBackPathSegments(ahBack)),
+  };
 }
 
 function vertexPoints(grid: ReturnType<typeof computeSleeveGrid>): SleeveVertex[] {
@@ -52,15 +72,15 @@ export function draftSleevePiece(
   ctx: DraftContext,
   gridWidthScale = 1
 ): PatternPiece {
-  const armholeLen = armholeLengthFromContext(ctx);
-  if (armholeLen === null || armholeLen <= 0) {
+  const lengths = armholeLengthsFromContext(ctx);
+  if (!lengths || lengths.front <= 0) {
     return {
       id: "sleeve",
       paths: [],
       error: "sleeve_armhole_unavailable",
     };
   }
-  const gridWidth = armholeLen * gridWidthScale;
+  const gridWidth = ((lengths.front + lengths.back) / 2) * gridWidthScale;
   const grid = computeSleeveGrid(ctx, gridWidth);
   const verts = applySleeveHandles(vertexPoints(grid));
   verts[verts.length - 1] = {
@@ -82,9 +102,17 @@ export function draftSleevePiece(
   outline.push(lineSegment(cuffLeft, cuffRight));
   outline.push(lineSegment(cuffRight, grid.h4Right));
 
+  const capCurveLength = pathLength(outline.slice(0, outline.length - 3));
+  const capEase = capCurveLength - (lengths.front + lengths.back);
+
   return {
     id: "sleeve",
     paths: outline,
-    points: { grid, armholeLength: armholeLen },
+    points: {
+      grid,
+      armholeLength: lengths.front,
+      armholeLengthBack: lengths.back,
+      capEase,
+    },
   };
 }

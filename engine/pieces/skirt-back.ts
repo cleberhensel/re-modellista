@@ -2,8 +2,8 @@ import { cubicSegment, lineSegment, point } from "../geometry.js";
 import type { PathSegment, PatternPiece, SkirtContext } from "../types.js";
 
 export function draftSkirtBack(ctx: SkirtContext): PatternPiece {
-  const { startOne, waistQuarterPx, hipQuarterPx, hipLineY, hemY, k } = ctx;
-  const waistX = waistQuarterPx + startOne;
+  const { startOne, waistBackQuarterPx, hipQuarterPx, hipLineY, hemY, k } = ctx;
+  const waistX = waistBackQuarterPx + startOne;
   const hipX = hipQuarterPx + startOne;
   const dartSpread = 1.25 * k;
   const dartCenterX = startOne + (waistX - startOne) * 0.5;
@@ -13,8 +13,8 @@ export function draftSkirtBack(ctx: SkirtContext): PatternPiece {
   const outline = [
     cubicSegment(
       cfTop,
-      point(startOne + waistQuarterPx * 0.3, startOne),
-      point(waistX - waistQuarterPx * 0.12, startOne),
+      point(startOne + waistBackQuarterPx * 0.3, startOne),
+      point(waistX - waistBackQuarterPx * 0.12, startOne),
       point(waistX, startOne)
     ),
     lineSegment(point(waistX, startOne), point(hipX, hipLineY)),

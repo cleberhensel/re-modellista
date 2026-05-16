@@ -14,14 +14,14 @@ const measurements = {
 function sideSegmentLengths(piece: ReturnType<typeof draftSleevePiece>) {
   const segs = piece.paths;
   const capCount = segs.length - 3;
-  const left = segs[capCount];
-  const right = segs[capCount + 2];
-  if (left.type !== "line" || right.type !== "line") {
+  const rightSide = segs[capCount];
+  const leftSide = segs[capCount + 2];
+  if (rightSide.type !== "line" || leftSide.type !== "line") {
     return null;
   }
   return {
-    left: pathLength([left]),
-    right: pathLength([right]),
+    left: pathLength([leftSide]),
+    right: pathLength([rightSide]),
   };
 }
 
@@ -41,13 +41,25 @@ describe("draftSleevePiece", () => {
     const ctx = buildContext(measurements);
     const piece = draftSleevePiece(ctx);
     const segs = piece.paths;
-    const right = segs[segs.length - 1];
+    const capCount = segs.length - 3;
+    const right = segs[capCount];
     expect(right.type).toBe("line");
     if (right.type === "line") {
       const dx = Math.abs(right.to.x - right.from.x);
       const dy = Math.abs(right.to.y - right.from.y);
       expect(dx).toBeGreaterThan(1);
       expect(dy).toBeGreaterThan(1);
+    }
+  });
+
+  it("closes outline continuously from cap to cuff", () => {
+    const ctx = buildContext(measurements);
+    const piece = draftSleevePiece(ctx);
+    const lastCap = piece.paths[piece.paths.length - 4];
+    const firstSide = piece.paths[piece.paths.length - 3];
+    expect(firstSide.type).toBe("line");
+    if (firstSide.type === "line" && lastCap.type !== "move") {
+      expect(firstSide.from).toEqual(lastCap.to);
     }
   });
 });

@@ -98,9 +98,9 @@ export function draftSleevePiece(
   const cuffLeft = point(capCenterX - widthFist / 2, yWrist);
   const cuffRight = point(capCenterX + widthFist / 2, yWrist);
 
-  outline.push(lineSegment(grid.h4Left, cuffLeft));
-  outline.push(lineSegment(cuffLeft, cuffRight));
-  outline.push(lineSegment(cuffRight, grid.h4Right));
+  outline.push(lineSegment(grid.h4Right, cuffRight));
+  outline.push(lineSegment(cuffRight, cuffLeft));
+  outline.push(lineSegment(cuffLeft, grid.h4Left));
 
   const capCurveLength = pathLength(outline.slice(0, outline.length - 3));
   const capEase = capCurveLength - (lengths.front + lengths.back);

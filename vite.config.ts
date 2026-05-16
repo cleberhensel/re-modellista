@@ -1,7 +1,8 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === "production" ? "/re-modellista/" : "/",
   root: ".",
   server: {
     port: 5173,
@@ -34,4 +35,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

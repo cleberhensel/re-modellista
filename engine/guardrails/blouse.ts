@@ -1,10 +1,15 @@
 import { buildContext } from "../context.js";
 import { seventhFromBustCm } from "../seventh.js";
 import type { DraftOptions, Measurements } from "../types.js";
-import { dartClearsArmhole, isBlouseFrontStable, shoulderIntersects } from "./checks.js";
+import {
+  dartClearsArmhole,
+  isBlouseStable,
+  shoulderBackIntersects,
+  shoulderIntersects,
+} from "./checks.js";
 import type { FieldRange, FieldSpec, MeasurementKey, PieceGuardrails } from "./types.js";
 
-const FIELDS: Record<MeasurementKey, FieldSpec> = {
+const FIELDS: Partial<Record<MeasurementKey, FieldSpec>> = {
   bust: { label: "Busto", step: 1, absoluteMin: 72, absoluteMax: 130 },
   height: { label: "Comprimento", step: 1, absoluteMin: 28, absoluteMax: 75 },
   waist: { label: "Cintura", step: 1, absoluteMin: 56, absoluteMax: 140 },
@@ -47,8 +52,7 @@ function mergeRange(
 
 function getDynamicRange(
   measurements: Measurements,
-  key: MeasurementKey,
-  options: DraftOptions = {}
+  key: MeasurementKey
 ): { min: number; max: number } {
   const bust = measurements.bust;
   switch (key) {
@@ -71,19 +75,14 @@ function getDynamicRange(
         min: FIELDS.sleeveLength.absoluteMin,
         max: FIELDS.sleeveLength.absoluteMax,
       };
-    default:
-      return { min: 1, max: 200 };
   }
 }
 
-function clampField(
-  measurements: Measurements,
-  key: MeasurementKey,
-  options: DraftOptions
-): number {
-  const spec = FIELDS[key];
-  const range = mergeRange(spec, getDynamicRange(measurements, key, options));
-  return roundStep(clamp(measurements[key], range.min, range.max), spec.step);
+function clampField(measurements: Measurements, key: MeasurementKey): number {
+  const spec = FIELDS[key]!;
+  const range = mergeRange(spec, getDynamicRange(measurements, key));
+  const value = measurements[key as keyof Measurements] as number;
+  return roundStep(clamp(value, range.min, range.max), spec.step);
 }
 
 function stabilize(
@@ -104,32 +103,35 @@ function stabilize(
   for (const key of order) {
     if (seen.has(key)) continue;
     seen.add(key);
-    m[key] = clampField(m, key, options);
+    m[key as keyof Measurements] = clampField(m, key) as never;
   }
-  if (isBlouseFrontStable(m, options)) {
+  if (isBlouseStable(m, options)) {
     return m;
   }
   if (priority !== "bust") {
-    for (let bust = m.bust; bust <= FIELDS.bust.absoluteMax; bust += 1) {
+    for (let bust = m.bust; bust <= FIELDS.bust!.absoluteMax; bust += 1) {
       m.bust = bust;
-      m.height = clampField(m, "height", options);
-      m.waist = clampField(m, "waist", options);
-      if (isBlouseFrontStable(m, options)) return m;
+      m.height = clampField(m, "height");
+      m.waist = clampField(m, "waist");
+      if (isBlouseStable(m, options)) return m;
     }
   }
-  for (let height = m.height; height <= FIELDS.height.absoluteMax; height += 1) {
+  for (let height = m.height; height <= FIELDS.height!.absoluteMax; height += 1) {
     m.height = height;
-    if (isBlouseFrontStable(m, options)) return m;
+    if (isBlouseStable(m, options)) return m;
   }
   return m;
 }
 
-export const blouseFrontGuardrails: PieceGuardrails = {
-  pieceId: "blouse-front",
+export const blouseGuardrails: PieceGuardrails = {
+  pieceId: "blusa",
   fields: FIELDS,
-  getFieldRange(measurements, key, options = {}) {
+  getFieldRange(measurements, key) {
     const spec = FIELDS[key];
-    return mergeRange(spec, getDynamicRange(measurements, key, options));
+    if (!spec) {
+      return { min: 1, max: 200, step: 1 };
+    }
+    return mergeRange(spec, getDynamicRange(measurements, key));
   },
   resolve(measurements, changed, options = {}) {
     const m = { ...measurements, [changed]: measurements[changed] };
@@ -137,14 +139,14 @@ export const blouseFrontGuardrails: PieceGuardrails = {
   },
 };
 
-export function blouseFrontStability(
+export function blouseStability(
   measurements: Measurements,
   options: DraftOptions = {}
 ): { stable: boolean; shoulder: boolean; dart: boolean } {
   const ctx = buildContext(measurements, options);
   return {
-    stable: isBlouseFrontStable(measurements, options),
-    shoulder: shoulderIntersects(ctx),
+    stable: isBlouseStable(measurements, options),
+    shoulder: shoulderIntersects(ctx) && shoulderBackIntersects(ctx),
     dart: dartClearsArmhole(ctx),
   };
 }

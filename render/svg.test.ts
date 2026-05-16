@@ -120,13 +120,15 @@ describe("renderDraftToSvg", () => {
     const svg = renderDraftToSvg(result);
     expect(svg).toContain("<svg");
     expect(svg).toContain("<path d=");
-    expect(svg).toContain(`width="${result.bounds.width}"`);
+    expect(svg).toMatch(/width="\d+"/);
+    expect(svg).toMatch(/viewBox="0 0 \d+ \d+"/);
   });
 
-  it("skips pieces without drawable path data", () => {
-    const result = draft(measurements, { piece: "back" });
+  it("renders multiple paths for full blouse", () => {
+    const result = draft(measurements);
     const svg = renderDraftToSvg(result);
     expect(svg).toContain("<svg");
-    expect(svg).not.toContain("<path d=");
+    const pathCount = (svg.match(/<path d=/g) ?? []).length;
+    expect(pathCount).toBeGreaterThanOrEqual(2);
   });
 });

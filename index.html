@@ -13,41 +13,101 @@
   </header>
   <main class="layout">
     <section class="panel sidebar">
+      <h2>Peça</h2>
+      <div class="product-picker">
+        <select id="product" aria-label="Peça"></select>
+      </div>
       <h2>Medidas</h2>
-      <div class="measure">
+      <div class="measure" data-measure="bust">
         <div class="measure-head">
           <span>Busto</span>
           <output id="bust-out" for="bust">92</output>
         </div>
         <input id="bust" type="range" value="92" step="1">
       </div>
-      <div class="measure">
+      <div class="measure" data-measure="height">
         <div class="measure-head">
           <span>Comprimento</span>
           <output id="height-out" for="height">45</output>
         </div>
         <input id="height" type="range" value="45" step="1">
       </div>
-      <div class="measure">
+      <div class="measure" data-measure="waist">
         <div class="measure-head">
           <span>Cintura</span>
           <output id="waist-out" for="waist">81</output>
         </div>
         <input id="waist" type="range" value="81" step="1">
       </div>
-      <div class="measure">
+      <div class="measure" data-measure="wrist">
         <div class="measure-head">
           <span>Punho</span>
           <output id="wrist-out" for="wrist">12</output>
         </div>
         <input id="wrist" type="range" value="12" step="1">
       </div>
-      <div class="measure">
+      <div class="measure" data-measure="sleeve">
         <div class="measure-head">
           <span>Manga</span>
           <output id="sleeve-out" for="sleeve">27</output>
         </div>
         <input id="sleeve" type="range" value="27" step="1">
+      </div>
+      <div class="measure hidden" data-measure="hip">
+        <div class="measure-head">
+          <span>Quadril</span>
+          <output id="hip-out" for="hip">96</output>
+        </div>
+        <input id="hip" type="range" value="96" step="1">
+      </div>
+      <div class="measure hidden" data-measure="hipDepth">
+        <div class="measure-head">
+          <span>Altura quadril</span>
+          <output id="hipDepth-out" for="hipDepth">20</output>
+        </div>
+        <input id="hipDepth" type="range" value="20" step="1">
+      </div>
+      <div class="measure hidden" data-measure="skirtLength">
+        <div class="measure-head">
+          <span>Comprimento saia</span>
+          <output id="skirtLength-out" for="skirtLength">60</output>
+        </div>
+        <input id="skirtLength" type="range" value="60" step="1">
+      </div>
+      <div class="measure hidden" data-measure="crotchDepth">
+        <div class="measure-head">
+          <span>Gancho</span>
+          <output id="crotchDepth-out" for="crotchDepth">26</output>
+        </div>
+        <input id="crotchDepth" type="range" value="26" step="1">
+      </div>
+      <div class="measure hidden" data-measure="inseam">
+        <div class="measure-head">
+          <span>Entrepernas</span>
+          <output id="inseam-out" for="inseam">78</output>
+        </div>
+        <input id="inseam" type="range" value="78" step="1">
+      </div>
+      <div class="measure hidden" data-measure="bodiceLength">
+        <div class="measure-head">
+          <span>Corpo</span>
+          <output id="bodiceLength-out" for="bodiceLength">42</output>
+        </div>
+        <input id="bodiceLength" type="range" value="42" step="1">
+      </div>
+      <div class="measure hidden" data-measure="designEaseBust">
+        <div class="measure-head">
+          <span>Folga busto</span>
+          <output id="designEaseBust-out" for="designEaseBust">6</output>
+        </div>
+        <input id="designEaseBust" type="range" value="6" step="1">
+      </div>
+      <div class="measure hidden" data-measure="coatLength">
+        <div class="measure-head">
+          <span>Comprimento casaco</span>
+          <output id="coatLength-out" for="coatLength">65</output>
+        </div>
+        <input id="coatLength" type="range" value="65" step="1">
       </div>
       <p class="guardrail-hint" id="guardrail-hint" hidden></p>
       <button id="render" type="button">Gerar</button>

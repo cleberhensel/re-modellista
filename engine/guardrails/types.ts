@@ -1,6 +1,18 @@
 import type { DraftOptions, Measurements } from "../types.js";
 
-export type MeasurementKey = keyof Measurements;
+export type MeasurementKey =
+  | keyof BodiceMeasurements
+  | keyof SkirtMeasurements
+  | keyof PantMeasurements
+  | "bodiceLength"
+  | "designEaseBust"
+  | "coatLength";
+
+import type {
+  BodiceMeasurements,
+  SkirtMeasurements,
+  PantMeasurements,
+} from "../types.js";
 
 export interface FieldSpec {
   label: string;
@@ -17,7 +29,7 @@ export interface FieldRange {
 
 export interface PieceGuardrails {
   pieceId: string;
-  fields: Record<MeasurementKey, FieldSpec>;
+  fields: Partial<Record<MeasurementKey, FieldSpec>>;
   getFieldRange(
     measurements: Measurements,
     key: MeasurementKey,

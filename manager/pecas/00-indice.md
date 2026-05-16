@@ -4,28 +4,28 @@ Ficha detalhada por peça (medidas, construção, matemática, derivações, est
 
 ## Peças do núcleo superior (implementadas ou parciais)
 
-| Ficheiro | Peça | Modellista |
-|----------|------|------------|
-| [blusa-frente.md](blusa-frente.md) | Blusa / bodice — frente | Implementado |
-| [blusa-costas.md](blusa-costas.md) | Blusa / bodice — costas | Implementado |
-| [manga.md](manga.md) | Manga set-in | Implementado |
-| [camisa.md](camisa.md) | Camisa (fluxo + elementos) | Parcial (bodice) |
+| Ficheiro | Peça | Modellista | Remodellista |
+|----------|------|------------|--------------|
+| [blusa-frente.md](blusa-frente.md) | Blusa / bodice — frente | Implementado | Implementado |
+| [blusa-costas.md](blusa-costas.md) | Blusa / bodice — costas | Implementado | Implementado |
+| [manga.md](manga.md) | Manga set-in | Implementado | Implementado |
+| [camisa.md](camisa.md) | Camisa (fluxo + elementos) | Parcial (bodice) | Implementado |
 
 ## Peças inferiores e corpo inteiro
 
-| Ficheiro | Peça | Modellista |
-|----------|------|------------|
-| [saia-reta.md](saia-reta.md) | Saia reta (bloco) | Não |
-| [calca.md](calca.md) | Calça (bloco) | Protótipo |
-| [vestido.md](vestido.md) | Vestido (união blusa + saia) | Não |
+| Ficheiro | Peça | Modellista | Remodellista |
+|----------|------|------------|--------------|
+| [saia-reta.md](saia-reta.md) | Saia reta (bloco) | Não | Implementado |
+| [calca.md](calca.md) | Calça (bloco) | Protótipo | Implementado |
+| [vestido.md](vestido.md) | Vestido (união blusa + saia) | Não | Implementado |
 
 ## Variantes e especializações
 
-| Ficheiro | Peça | Modellista |
-|----------|------|------------|
-| [top-sem-mangas.md](top-sem-mangas.md) | Top / blusa sem mangas | Não |
-| [casaco-blazer.md](casaco-blazer.md) | Casaco / blazer | Não |
-| [malha-knit.md](malha-knit.md) | Malha / knit block | Não |
+| Ficheiro | Peça | Modellista | Remodellista |
+|----------|------|------------|--------------|
+| [top-sem-mangas.md](top-sem-mangas.md) | Top / blusa sem mangas | Não | Implementado |
+| [casaco-blazer.md](casaco-blazer.md) | Casaco / blazer | Não | Implementado |
+| [malha-knit.md](malha-knit.md) | Malha / knit block | Não | Implementado |
 
 ## Complementos de modelagem
 

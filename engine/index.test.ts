@@ -11,22 +11,21 @@ const measurements: Measurements = {
 };
 
 describe("draft", () => {
-  it("drafts blouse front by default", () => {
+  it("drafts full blouse by default", () => {
     const result = draft(measurements);
-    expect(result.pieces).toHaveLength(1);
+    expect(result.productId).toBe("blusa");
+    expect(result.pieces).toHaveLength(2);
     expect(result.pieces[0].id).toBe("blouse-front");
-    expect(result.pieces[0].paths.length).toBeGreaterThan(0);
+    expect(result.pieces[1].id).toBe("blouse-back");
     expect(result.bounds.width).toBeGreaterThan(0);
     expect(result.bounds.height).toBeGreaterThan(0);
   });
 
-  it("drafts back placeholder", () => {
-    const result = draft(measurements, { piece: "back" });
-    expect(result.pieces[0]).toEqual({
-      id: "blouse-back",
-      paths: [],
-      note: "not_implemented",
-    });
+  it("drafts sleeve product", () => {
+    const result = draft(measurements, { productId: "manga" });
+    expect(result.productId).toBe("manga");
+    expect(result.pieces[0].id).toBe("sleeve");
+    expect(result.meta?.armholeLength).toBeGreaterThan(0);
   });
 });
 

@@ -22,6 +22,7 @@ export function buildContext(
 
   return {
     measurements,
+    draftOptions: options,
     k,
     margin,
     start,

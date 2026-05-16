@@ -1,4 +1,4 @@
-export interface Measurements {
+export interface BodiceMeasurements {
   bust: number;
   height: number;
   waist: number;
@@ -6,10 +6,107 @@ export interface Measurements {
   sleeveLength: number;
 }
 
-export interface SeventhScale {
+export interface SkirtMeasurements {
+  waist: number;
+  hip: number;
+  hipDepth: number;
+  skirtLength: number;
+}
+
+export interface PantMeasurements {
+  waist: number;
+  hip: number;
+  crotchDepth: number;
+  inseam: number;
+}
+
+export interface DressMeasurements extends BodiceMeasurements {
+  bodiceLength: number;
+  hip: number;
+  hipDepth: number;
+  skirtLength: number;
+}
+
+export interface CoatMeasurements extends BodiceMeasurements {
+  designEaseBust: number;
+  coatLength: number;
+}
+
+export type Measurements = BodiceMeasurements &
+  Partial<SkirtMeasurements> &
+  Partial<PantMeasurements> &
+  Partial<Pick<DressMeasurements, "bodiceLength">> &
+  Partial<Pick<CoatMeasurements, "designEaseBust" | "coatLength">>;
+
+export interface SeventhCm {
   one: number;
   two: number;
+  three: number;
   four: number;
+  five: number;
+  six: number;
+  seven: number;
+}
+
+export interface SeventhPx {
+  one: number;
+  two: number;
+  three: number;
+  four: number;
+  five: number;
+  six: number;
+  seven: number;
+}
+
+export interface DraftFormulas {
+  bustQuarterCm: number;
+  bustHalfCm: number;
+  seventhOneCm: number;
+  seventhTwoCm: number;
+  seventhFourCm: number;
+  widthPx: number;
+  heightPx: number;
+  hipPx: number;
+  shoulderY: number;
+  armholeLineY: number;
+}
+
+export interface DraftContext {
+  measurements: Measurements;
+  draftOptions: DraftOptions;
+  k: number;
+  margin: number;
+  start: number;
+  startOne: number;
+  startTwo: number;
+  widthPx: number;
+  heightPx: number;
+  hipPx: number;
+  seventh: SeventhCm;
+  s: SeventhPx;
+  formulas: DraftFormulas;
+}
+
+export interface SkirtContext {
+  measurements: SkirtMeasurements;
+  k: number;
+  startOne: number;
+  waistQuarterPx: number;
+  hipQuarterPx: number;
+  hipLineY: number;
+  hemY: number;
+}
+
+export interface PantContext {
+  measurements: PantMeasurements;
+  k: number;
+  startOne: number;
+  waistQuarterPx: number;
+  hipQuarterPx: number;
+  crotchLineY: number;
+  outseamPx: number;
+  frontExtension: number;
+  backExtension: number;
 }
 
 export interface Point2 {
@@ -26,35 +123,8 @@ export type PathSegment =
       cp1: Point2;
       cp2: Point2;
       to: Point2;
+      dash?: boolean;
     };
-
-export interface FormulaResults {
-  bustQuarterCm: number;
-  bustHalfCm: number;
-  seventhOneCm: number;
-  seventhTwoCm: number;
-  seventhFourCm: number;
-  widthPx: number;
-  heightPx: number;
-  hipPx: number;
-  shoulderY: number;
-  armholeLineY: number;
-}
-
-export interface DraftContext {
-  measurements: Measurements;
-  k: number;
-  margin: number;
-  start: number;
-  startOne: number;
-  startTwo: number;
-  widthPx: number;
-  heightPx: number;
-  hipPx: number;
-  seventh: SeventhScale;
-  s: SeventhScale;
-  formulas: FormulaResults;
-}
 
 export interface PatternPiece {
   id: string;
@@ -70,13 +140,22 @@ export interface DraftBounds {
 }
 
 export interface DraftResult {
-  ctx: DraftContext;
+  productId: string;
+  ctx: DraftContext | SkirtContext | PantContext;
   pieces: PatternPiece[];
   bounds: DraftBounds;
+  meta?: Record<string, number>;
+  error?: string;
 }
 
 export interface DraftOptions {
+  productId?: string;
   pxPerCm?: number;
   marginCm?: number;
-  piece?: "front" | "back";
+  sleeveless?: boolean;
+  armholeDepthOffsetCm?: number;
+  suppressDarts?: boolean;
+  designEaseBust?: number;
+  coatLength?: number;
+  fabricProfileId?: string;
 }

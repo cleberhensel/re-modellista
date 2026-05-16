@@ -1,5 +1,5 @@
 import { add, cubicSegment, lineSegment, point } from "./geometry.js";
-import type { DraftContext, PathSegment, Point2 } from "./types.js";
+import type { DraftContext, DraftOptions, PathSegment, Point2 } from "./types.js";
 
 export interface ArmholePoints {
   p1: Point2;
@@ -13,7 +13,8 @@ export interface ArmholePoints {
 
 export function computeArmholePoints(
   ctx: DraftContext,
-  intersectionY: number
+  intersectionY: number,
+  options: DraftOptions = {}
 ): ArmholePoints {
   const { startOne, widthPx, k, s, seventh } = ctx;
   const alg = seventh.four + 0.3;
@@ -26,7 +27,11 @@ export function computeArmholePoints(
     widthPx + startOne - s.two,
     s.one * 3 + s.two + startOne - s.four
   );
-  const p4 = point(widthPx + startOne + k, s.one * 3 + s.two + startOne);
+  let p4 = point(widthPx + startOne + k, s.one * 3 + s.two + startOne);
+  if (options.sleeveless) {
+    const offset = (options.armholeDepthOffsetCm ?? 2) * k;
+    p4 = point(p4.x - offset, p4.y);
+  }
   const p2Vec = point((p2.x - p1.x) * alg, (p2.y - p1.y) * alg);
   const p2HandleOut = point(
     p2Vec.x + p1.x - p2.x,

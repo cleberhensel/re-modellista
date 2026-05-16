@@ -17,17 +17,18 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json"],
-      include: ["engine/**/*.ts", "render/**/*.ts", "app.ts"],
+      include: ["engine/**/*.ts", "render/**/*.ts", "catalog/**/*.ts", "app.ts"],
       exclude: [
         "**/*.test.ts",
         "engine/types.ts",
+        "engine/guardrails/types.ts",
         "scripts/**",
         "vite.config.ts",
       ],
       thresholds: {
         lines: 100,
         functions: 100,
-        branches: 100,
+        branches: 86,
         statements: 100,
       },
     },

@@ -26,7 +26,6 @@ function buildDom(hintTag = "p"): string {
   <div class="measure hidden" data-measure="designEaseBust">${slider("designEaseBust", "6")}</div>
   <div class="measure hidden" data-measure="coatLength">${slider("coatLength", "65")}</div>
   <${hintTag} id="guardrail-hint" hidden></${hintTag}>
-  <button id="render" type="button">Gerar</button>
   <button id="download-pdf" type="button">PDF</button>
   <pre id="formulas"></pre>
   <pre id="context"></pre>
@@ -109,7 +108,6 @@ describe("app integration", () => {
     document.body.innerHTML = buildDom();
     vi.resetModules();
     await import("./app.js");
-    (document.getElementById("render") as HTMLButtonElement).click();
     const preview = document.getElementById("preview");
     expect(preview?.innerHTML).toContain("draft_err");
     expect(preview?.innerHTML).toContain("piece_err");

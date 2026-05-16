@@ -492,12 +492,6 @@ productSelect().addEventListener("change", () => {
   render();
 });
 
-const renderBtn = document.getElementById("render");
-if (!(renderBtn instanceof HTMLButtonElement)) {
-  throw new Error("missing #render");
-}
-renderBtn.addEventListener("click", render);
-
 const downloadPdfBtn = document.getElementById("download-pdf");
 if (!(downloadPdfBtn instanceof HTMLButtonElement)) {
   throw new Error("missing #download-pdf");

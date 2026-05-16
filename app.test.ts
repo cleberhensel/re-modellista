@@ -61,7 +61,6 @@ const fullDom = `
   ${measure("bodiceLength", "42", "Corpo")}
   ${measure("designEaseBust", "6", "Folga")}
   ${measure("coatLength", "65", "Casaco")}
-  <button id="render" type="button">Gerar</button>
   <button id="download-pdf" type="button">PDF</button>
   <p id="guardrail-hint" hidden></p>
   <pre id="formulas"></pre>
@@ -87,7 +86,7 @@ afterEach(() => {
 });
 
 describe("app", () => {
-  it("renders on load and on button click", async () => {
+  it("renders on load and on slider change", async () => {
     document.body.innerHTML = fullDom;
     await import("./app.js");
     const preview = document.getElementById("preview") as HTMLDivElement;
@@ -242,7 +241,6 @@ describe("app", () => {
       '<option value="malha">Malha</option><option value="bermuda">Bermuda</option>';
     product.value = "malha";
     product.dispatchEvent(new Event("change"));
-    (document.getElementById("render") as HTMLButtonElement).click();
     product.value = "bermuda";
     product.dispatchEvent(new Event("change"));
     expect(document.getElementById("preview")?.innerHTML).toContain("<svg");
@@ -286,14 +284,6 @@ describe("app", () => {
       ""
     );
     await expect(import("./app.js")).rejects.toThrow("missing #download-pdf");
-  });
-
-  it("throws when render button is missing", async () => {
-    document.body.innerHTML = fullDom.replace(
-      '<button id="render" type="button">Gerar</button>\n  ',
-      ""
-    );
-    await expect(import("./app.js")).rejects.toThrow("missing #render");
   });
 
   it("throws when formulas panel is missing", async () => {

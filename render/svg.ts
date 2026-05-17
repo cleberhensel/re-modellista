@@ -1,6 +1,6 @@
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
 import type { DraftResult, PathSegment, PatternPiece, Point2 } from "../engine/types.js";
-import { layoutPieces, pieceBounds } from "./layout.js";
+import { layoutPieces, pieceLayoutBounds, type PieceBounds } from "./layout.js";
 import { CUT_MARKER_VIEW_OUTSET_PX, cutMarkersSvg } from "./cut-markers.js";
 import {
   DEFAULT_SEAM_ALLOWANCE_CM,
@@ -11,6 +11,83 @@ import { renderPreviewGrid } from "./preview-grid.js";
 export interface RenderOptions {
   seamAllowanceCm?: number;
   pxPerCm?: number;
+  includePreviewGrid?: boolean;
+}
+
+function unionLayoutBounds(
+  pieces: PatternPiece[],
+  options: RenderOptions
+): PieceBounds | null {
+  const seamCm = options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM;
+  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const piece of pieces) {
+    if (piece.paths.length === 0) continue;
+    const b = pieceLayoutBounds(piece, seamCm, pxPerCm);
+    if (b.minX < minX) minX = b.minX;
+    if (b.minY < minY) minY = b.minY;
+    if (b.maxX > maxX) maxX = b.maxX;
+    if (b.maxY > maxY) maxY = b.maxY;
+  }
+  if (!Number.isFinite(minX)) return null;
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+
+function assemblePatternSvg(
+  body: string,
+  options: RenderOptions,
+  drawable: PatternPiece[],
+  layoutBounds?: { width: number; height: number }
+): string {
+  const pad = CUT_MARKER_VIEW_OUTSET_PX;
+  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
+  const includeGrid = options.includePreviewGrid !== false;
+
+  let minX: number;
+  let minY: number;
+  let w: number;
+  let h: number;
+
+  if (!includeGrid) {
+    const union = unionLayoutBounds(drawable, options);
+    if (!union) {
+      minX = -pad;
+      minY = -pad;
+      w = 400 + pad;
+      h = 400 + pad;
+    } else {
+      minX = union.minX - pad;
+      minY = union.minY - pad;
+      w = Math.ceil(union.width + pad * 2);
+      h = Math.ceil(union.height + pad * 2);
+    }
+  } else {
+    minX = -pad;
+    minY = -pad;
+    w = Math.ceil(Math.max(layoutBounds?.width ?? 400, 400) + pad);
+    h = Math.ceil(Math.max(layoutBounds?.height ?? 400, 400) + pad);
+  }
+
+  const grid = includeGrid
+    ? renderPreviewGrid(
+        { minX, minY, maxX: minX + w, maxY: minY + h },
+        pxPerCm,
+        1,
+        pad
+      )
+    : "";
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${minX} ${minY} ${w} ${h}">${grid}${body}</svg>`;
 }
 
 function fmt(p: Point2): string {
@@ -146,34 +223,10 @@ export function renderPositionedPiecesToSvg(
   options: RenderOptions = {}
 ): string {
   const drawable = pieces.filter((p) => p.paths.length > 0);
-  let maxX = CUT_MARKER_VIEW_OUTSET_PX;
-  let maxY = CUT_MARKER_VIEW_OUTSET_PX;
-  for (const piece of drawable) {
-    const b = pieceBounds(piece);
-    const pad =
-      (options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM) *
-      (options.pxPerCm ?? DEFAULT_PX_PER_CM);
-    if (b.maxX + pad > maxX) maxX = b.maxX + pad;
-    if (b.maxY + pad > maxY) maxY = b.maxY + pad;
-  }
-  const bounds = {
-    width: Math.ceil(Math.max(maxX, 400)),
-    height: Math.ceil(Math.max(maxY, 400)),
-  };
   const body = drawable
     .map((piece) => renderPieceSvg(piece, false, options))
     .join("\n");
-  const pad = CUT_MARKER_VIEW_OUTSET_PX;
-  const w = bounds.width + pad;
-  const h = bounds.height + pad;
-  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
-  const grid = renderPreviewGrid(
-    { minX: -pad, minY: -pad, maxX: -pad + w, maxY: -pad + h },
-    pxPerCm,
-    1,
-    pad
-  );
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${grid}${body}</svg>`;
+  return assemblePatternSvg(body, options, drawable);
 }
 
 export function renderDraftToSvg(
@@ -187,15 +240,5 @@ export function renderDraftToSvg(
     pxPerCm: options.pxPerCm,
   });
   const body = pieces.map((piece) => renderPieceSvg(piece, false, options)).join("\n");
-  const pad = CUT_MARKER_VIEW_OUTSET_PX;
-  const w = bounds.width + pad;
-  const h = bounds.height + pad;
-  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
-  const grid = renderPreviewGrid(
-    { minX: -pad, minY: -pad, maxX: -pad + w, maxY: -pad + h },
-    pxPerCm,
-    1,
-    pad
-  );
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${grid}${body}</svg>`;
+  return assemblePatternSvg(body, options, pieces, bounds);
 }

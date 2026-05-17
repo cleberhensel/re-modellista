@@ -210,12 +210,49 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/></svg>
           </button>
         </div>
+        <div class="editor-toolbar-separator editor-toolbar-separator--fullscreen" aria-hidden="true" hidden></div>
+        <div class="editor-toolbar-group editor-toolbar-group--fullscreen" hidden>
+          <button
+            type="button"
+            id="editor-fullscreen-toggle"
+            class="editor-tool-btn editor-fullscreen-tool"
+            aria-pressed="false"
+            aria-label="Tela cheia"
+            title="Tela cheia (F)"
+          >
+            <svg class="editor-fullscreen-icon editor-fullscreen-icon--enter" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 3H3v5M16 3h5v5M16 21h5v-5M8 21H3v-5"/>
+            </svg>
+            <svg class="editor-fullscreen-icon editor-fullscreen-icon--exit" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 14h6v6M14 4h6v6M14 20h6v-6M4 10h6V4"/>
+            </svg>
+          </button>
+        </div>
           </div>
 
           <div class="panel-mold-header-actions">
-            <button type="button" id="editor-apply-edits" class="btn btn-primary btn-compact editor-header-btn" hidden>Aplicar</button>
-            <button type="button" id="editor-reset-edits" class="btn btn-secondary btn-compact editor-header-btn" hidden>Limpar</button>
-            <button id="download-pdf" type="button" class="btn btn-secondary btn-compact">PDF</button>
+            <button type="button" id="editor-apply-edits" class="btn btn-primary btn-compact editor-header-btn editor-action-btn editor-action-btn--apply" hidden>Aplicar</button>
+            <button type="button" id="editor-reset-edits" class="btn btn-secondary btn-compact editor-header-btn editor-action-btn editor-action-btn--reset" hidden title="Limpar edições" aria-label="Limpar edições">
+              <span class="editor-action-label">Limpar</span>
+              <svg class="editor-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                <path d="M10 11v6M14 11v6"/>
+              </svg>
+            </button>
+            <button id="copy-svg" type="button" class="btn btn-secondary btn-compact editor-action-btn editor-action-btn--copy-svg" title="Copiar SVG" aria-label="Copiar SVG">
+              <span class="editor-action-label">SVG</span>
+              <svg class="editor-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+            <button id="download-pdf" type="button" class="btn btn-secondary btn-compact editor-action-btn editor-action-btn--export" title="Exportar PDF" aria-label="Exportar PDF">
+              <span class="editor-action-label">PDF</span>
+              <svg class="editor-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v12M8 11l4 4 4-4"/>
+                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -229,18 +266,21 @@
       </dialog>
       <div class="preview-stage">
         <div class="preview-chrome">
-          <label class="editor-mode-toggle">
-            <input type="checkbox" id="editor-mode-toggle" class="editor-mode-toggle-input" aria-label="Preview">
-            <span class="editor-mode-toggle-track">
-              <span class="editor-mode-toggle-thumb" aria-hidden="true"></span>
-              <span class="editor-mode-toggle-label">Preview</span>
-              <span class="editor-mode-toggle-label">Editor</span>
-            </span>
-          </label>
+          <div class="preview-chrome-controls">
+            <label class="editor-mode-toggle">
+              <input type="checkbox" id="editor-mode-toggle" class="editor-mode-toggle-input" aria-label="Preview">
+              <span class="editor-mode-toggle-track">
+                <span class="editor-mode-toggle-thumb" aria-hidden="true"></span>
+                <span class="editor-mode-toggle-label">Preview</span>
+                <span class="editor-mode-toggle-label">Editor</span>
+              </span>
+            </label>
+          </div>
         </div>
         <div class="preview" id="preview"></div>
       </div>
     </section>
+    <div id="mold-right-rail" class="mold-right-rail" hidden></div>
     <section class="panel formulas sidebar">
       <h2>Fórmulas (resultado)</h2>
       <pre id="formulas"></pre>

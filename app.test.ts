@@ -69,6 +69,7 @@ const fullDom = `
     <button type="button" id="editor-regenerate-cancel">Cancelar</button>
     <button type="button" id="editor-regenerate-confirm">Regenerar</button>
   </dialog>
+  <button id="copy-svg" type="button">SVG</button>
   <button id="download-pdf" type="button">PDF</button>
   <p id="guardrail-hint" hidden></p>
   <pre id="formulas"></pre>

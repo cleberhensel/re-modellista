@@ -59,6 +59,9 @@
   --sidebar-width: 220px;
   --inspector-width: 280px;
   --preview-min-height: 400px;
+  --app-header-offset: 4.5rem;
+  --mold-float-surface: rgb(255 255 255 / 0.94);
+  --mold-float-blur: 10px;
 
   --btn-height: 2.75rem;
 }

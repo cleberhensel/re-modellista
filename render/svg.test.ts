@@ -208,4 +208,11 @@ describe("renderDraftToSvg", () => {
     const pathCount = (svg.match(/<path d=/g) ?? []).length;
     expect(pathCount).toBeGreaterThanOrEqual(2);
   });
+
+  it("omits preview grid when includePreviewGrid is false", () => {
+    const result = draft(measurements);
+    const svg = renderDraftToSvg(result, { includePreviewGrid: false });
+    expect(svg).not.toContain("preview-grid");
+    expect(svg).toContain('class="piece"');
+  });
 });

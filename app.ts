@@ -30,6 +30,7 @@ import {
   unmountEditorCanvas,
 } from "./app-editor.js";
 import { buildRegenerateKey } from "./editor/regenerate-key.js";
+import { renderDocumentToSvg } from "./editor/export/to-svg.js";
 
 const SLIDER_DOM: Record<string, string> = {
   bust: "bust",
@@ -451,11 +452,7 @@ function render(): void {
       previewEl.innerHTML = renderDraftToSvg(result, viewOptions);
     }
   }
-  const downloadBtn = document.getElementById("download-pdf");
-  if (downloadBtn instanceof HTMLButtonElement) {
-    const hasPieces = result.pieces.some((p) => p.paths.length > 0);
-    downloadBtn.disabled = !hasPieces || !!result.error;
-  }
+  syncExportButtons(result);
   if (result.error) {
     previewEl.insertAdjacentHTML(
       "beforeend",
@@ -560,11 +557,53 @@ productSelect().addEventListener("change", () => {
   lastProductId = newId;
 });
 
+function patternSvgForExport(): string | null {
+  const draftResult = lastDraftResult;
+  if (!draftResult) return null;
+  const opts = { ...renderOptions(), includePreviewGrid: false };
+  const doc = getPatternDocument();
+  if (isEditorEnabled() && doc) {
+    return renderDocumentToSvg(doc, opts);
+  }
+  if (doc && hasSavedPatternView(doc)) {
+    return renderDocumentToSvg(doc, opts);
+  }
+  return renderDraftToSvg(draftResult, opts);
+}
+
+function syncExportButtons(result: DraftResult | null = lastDraftResult): void {
+  const hasPieces = result?.pieces.some((p) => p.paths.length > 0) ?? false;
+  const disabled = !hasPieces || !!result?.error;
+  for (const id of ["download-pdf", "copy-svg"]) {
+    const btn = document.getElementById(id);
+    if (btn instanceof HTMLButtonElement) btn.disabled = disabled;
+  }
+}
+
 const downloadPdfBtn = document.getElementById("download-pdf");
 if (!(downloadPdfBtn instanceof HTMLButtonElement)) {
   throw new Error("missing #download-pdf");
 }
+const copySvgBtn = document.getElementById("copy-svg");
+if (!(copySvgBtn instanceof HTMLButtonElement)) {
+  throw new Error("missing #copy-svg");
+}
 downloadPdfBtn.disabled = true;
+copySvgBtn.disabled = true;
+
+copySvgBtn.addEventListener("click", async () => {
+  const svg = patternSvgForExport();
+  if (!svg) return;
+  copySvgBtn.disabled = true;
+  try {
+    await navigator.clipboard.writeText(svg);
+  } catch {
+    window.alert("Não foi possível copiar o SVG.");
+  } finally {
+    syncExportButtons();
+  }
+});
+
 downloadPdfBtn.addEventListener("click", async () => {
   const draftResult = lastDraftResult;
   if (!draftResult) return;
@@ -588,9 +627,7 @@ downloadPdfBtn.addEventListener("click", async () => {
     window.alert("Não foi possível gerar o PDF. Gere o molde primeiro.");
   } finally {
     downloadPdfBtn.textContent = label;
-    const hasPieces =
-      lastDraftResult?.pieces.some((p) => p.paths.length > 0) ?? false;
-    downloadPdfBtn.disabled = !hasPieces || !!lastDraftResult?.error;
+    syncExportButtons();
   }
 });
 

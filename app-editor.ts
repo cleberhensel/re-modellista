@@ -13,12 +13,90 @@ import { renderDocumentToSvg } from "./editor/export/to-svg.js";
 const EDITOR_STORAGE_KEY = "remodellista.editorMode";
 
 let editorEnabled = false;
+let moldFullscreen = false;
+let actionsHome: HTMLElement | null = null;
+let formulasHome: HTMLElement | null = null;
 let patternDocument: PatternDocument | null = null;
 let canvasController: CanvasController | null = null;
 let pendingRegenerateAction: (() => void) | null = null;
 
 export function isEditorEnabled(): boolean {
   return editorEnabled;
+}
+
+export function isMoldFullscreen(): boolean {
+  return moldFullscreen;
+}
+
+function updateAppHeaderOffset(): void {
+  const header = document.querySelector(".app-header");
+  if (header instanceof HTMLElement) {
+    document.documentElement.style.setProperty(
+      "--app-header-offset",
+      `${header.offsetHeight}px`
+    );
+  }
+}
+
+function mountFullscreenRail(): void {
+  const actions = document.querySelector(".panel-mold-header-actions");
+  const formulas = document.querySelector(".panel.formulas");
+  const rail = document.getElementById("mold-right-rail");
+  if (
+    !(actions instanceof HTMLElement) ||
+    !(formulas instanceof HTMLElement) ||
+    !(rail instanceof HTMLElement)
+  ) {
+    return;
+  }
+  if (!actionsHome) actionsHome = actions.parentElement;
+  if (!formulasHome) formulasHome = formulas.parentElement;
+  rail.hidden = false;
+  rail.appendChild(actions);
+  rail.appendChild(formulas);
+}
+
+function unmountFullscreenRail(): void {
+  const actions = document.querySelector(".panel-mold-header-actions");
+  const formulas = document.querySelector(".panel.formulas");
+  const rail = document.getElementById("mold-right-rail");
+  const headerEnd = document.querySelector(".panel-mold-header-end");
+  const layout = document.querySelector(".layout");
+  if (
+    !(actions instanceof HTMLElement) ||
+    !(formulas instanceof HTMLElement) ||
+    !(rail instanceof HTMLElement) ||
+    !(headerEnd instanceof HTMLElement) ||
+    !(layout instanceof HTMLElement)
+  ) {
+    return;
+  }
+  rail.hidden = true;
+  if (actionsHome) actionsHome.appendChild(actions);
+  else headerEnd.appendChild(actions);
+  if (formulasHome) formulasHome.appendChild(formulas);
+  else layout.appendChild(formulas);
+}
+
+function setMoldFullscreen(enabled: boolean): void {
+  if (moldFullscreen === enabled) return;
+  moldFullscreen = enabled;
+  document.body.classList.toggle("mold-fullscreen", enabled);
+  if (enabled) mountFullscreenRail();
+  else unmountFullscreenRail();
+  const btn = document.getElementById("editor-fullscreen-toggle");
+  if (btn instanceof HTMLButtonElement) {
+    btn.classList.toggle("is-active", enabled);
+    btn.setAttribute("aria-pressed", enabled ? "true" : "false");
+    btn.setAttribute("aria-label", enabled ? "Sair da tela cheia" : "Tela cheia");
+    btn.title = enabled ? "Sair da tela cheia (Esc)" : "Tela cheia (F)";
+  }
+  updateAppHeaderOffset();
+  requestAnimationFrame(() => {
+    updateAppHeaderOffset();
+    canvasController?.fit();
+    requestAnimationFrame(() => canvasController?.fit());
+  });
 }
 
 export function getPatternDocument(): PatternDocument | null {
@@ -59,6 +137,13 @@ function syncEditorChrome(): void {
     toggle.setAttribute("aria-label", editorEnabled ? "Editor" : "Preview");
   }
   if (toolbar) toolbar.hidden = !editorEnabled;
+  const fullscreenSep = document.querySelector(".editor-toolbar-separator--fullscreen");
+  const fullscreenGroup = document.querySelector(".editor-toolbar-group--fullscreen");
+  if (fullscreenSep instanceof HTMLElement) fullscreenSep.hidden = !editorEnabled;
+  if (fullscreenGroup instanceof HTMLElement) fullscreenGroup.hidden = !editorEnabled;
+  if (!editorEnabled && moldFullscreen) {
+    setMoldFullscreen(false);
+  }
   const dirty = editorEnabled && patternDocument && hasManualEdits(patternDocument);
   const canReset =
     editorEnabled &&
@@ -250,7 +335,18 @@ export function initEditor(
   editorEnabled = false;
   toggle.checked = false;
   patternDocument = null;
+  updateAppHeaderOffset();
   syncEditorChrome();
+
+  const fullscreenBtn = document.getElementById("editor-fullscreen-toggle");
+  if (fullscreenBtn instanceof HTMLButtonElement) {
+    fullscreenBtn.addEventListener("click", () => {
+      if (!editorEnabled) return;
+      setMoldFullscreen(!moldFullscreen);
+    });
+  }
+
+  window.addEventListener("resize", updateAppHeaderOffset);
 
   toggle.addEventListener("change", () => {
     editorEnabled = toggle.checked;
@@ -336,7 +432,19 @@ export function initEditor(
   }
 
   window.addEventListener("keydown", (e) => {
+    if (moldFullscreen && e.key === "Escape" && !isInputFocused()) {
+      e.preventDefault();
+      setMoldFullscreen(false);
+      return;
+    }
     if (!editorEnabled || isInputFocused()) return;
+    if (e.key === "f" || e.key === "F") {
+      if (!(e.metaKey || e.ctrlKey || e.altKey)) {
+        e.preventDefault();
+        setMoldFullscreen(!moldFullscreen);
+      }
+      return;
+    }
     if (e.key === "v" || e.key === "V") setActiveToolButton("select");
     else if (e.key === "h" || e.key === "H") setActiveToolButton("pan");
     else if (e.key === "n" || e.key === "N") setActiveToolButton("add-node");

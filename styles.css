@@ -542,12 +542,269 @@ body {
   pointer-events: none;
 }
 
+.preview-chrome-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  pointer-events: auto;
+}
+
 .preview-chrome .editor-mode-toggle {
   pointer-events: auto;
 }
 
 .preview-chrome .editor-mode-toggle-track {
   box-shadow: var(--shadow-panel);
+}
+
+.editor-action-icon {
+  display: none;
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.editor-fullscreen-tool .editor-fullscreen-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.editor-fullscreen-tool .editor-fullscreen-icon--exit {
+  display: none;
+}
+
+.editor-fullscreen-tool.is-active .editor-fullscreen-icon--enter {
+  display: none;
+}
+
+.editor-fullscreen-tool.is-active .editor-fullscreen-icon--exit {
+  display: block;
+}
+
+body.mold-fullscreen {
+  overflow: hidden;
+}
+
+body.mold-fullscreen .app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+body.mold-fullscreen .layout {
+  position: fixed;
+  inset: 0;
+  display: block;
+  padding: 0;
+  margin: 0;
+  gap: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+body.mold-fullscreen .panel-mold {
+  position: fixed;
+  inset: 0;
+  top: var(--app-header-offset);
+  z-index: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--color-canvas);
+  display: block;
+  pointer-events: none;
+}
+
+body.mold-fullscreen .panel-mold-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: none;
+  z-index: 30;
+  pointer-events: none;
+}
+
+body.mold-fullscreen .panel-mold-header h2 {
+  display: none;
+}
+
+body.mold-fullscreen .panel-mold-header-end {
+  overflow: visible;
+}
+
+body.mold-fullscreen #editor-toolbar:not([hidden]) {
+  position: fixed;
+  top: calc(var(--app-header-offset) + var(--space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 32;
+  flex: none;
+  max-width: min(44rem, calc(100vw - var(--space-8)));
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--mold-float-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(var(--mold-float-blur));
+  -webkit-backdrop-filter: blur(var(--mold-float-blur));
+  justify-content: center;
+  pointer-events: auto;
+}
+
+body.mold-fullscreen #mold-right-rail {
+  position: fixed;
+  right: var(--space-3);
+  top: calc(var(--app-header-offset) + var(--space-3) + 3.25rem);
+  bottom: var(--space-3);
+  width: min(var(--inspector-width), calc(100vw - var(--space-6)));
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  z-index: 25;
+  pointer-events: none;
+}
+
+body.mold-fullscreen #mold-right-rail > * {
+  pointer-events: auto;
+}
+
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--mold-float-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(var(--mold-float-blur));
+  -webkit-backdrop-filter: blur(var(--mold-float-blur));
+}
+
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions {
+  flex-shrink: 0;
+}
+
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--reset,
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--export,
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--copy-svg {
+  min-width: 2rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--reset .editor-action-label,
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--export .editor-action-label,
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--copy-svg .editor-action-label {
+  display: none;
+}
+
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--reset .editor-action-icon,
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--export .editor-action-icon,
+body.mold-fullscreen #mold-right-rail .panel-mold-header-actions .editor-action-btn--copy-svg .editor-action-icon {
+  display: block;
+}
+
+body.mold-fullscreen .preview-stage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(rgb(0 0 0 / 0.07) 0.65px, transparent 0.65px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+body.mold-fullscreen .preview-chrome {
+  position: fixed;
+  top: calc(var(--app-header-offset) + var(--space-3));
+  right: var(--space-3);
+  z-index: 34;
+  pointer-events: none;
+}
+
+body.mold-fullscreen .preview.editor-active {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.mold-fullscreen .layout > .panel.sidebar:first-of-type {
+  position: fixed;
+  left: var(--space-3);
+  top: calc(var(--app-header-offset) + var(--space-3));
+  width: min(var(--sidebar-width), calc(100vw - var(--space-6)));
+  max-height: calc(100vh - var(--app-header-offset) - var(--space-6));
+  z-index: 24;
+  margin: 0;
+  padding: var(--space-3);
+  overflow-y: auto;
+  background: var(--mold-float-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(var(--mold-float-blur));
+  -webkit-backdrop-filter: blur(var(--mold-float-blur));
+  pointer-events: auto;
+}
+
+body.mold-fullscreen #mold-right-rail .panel.formulas {
+  position: static;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  padding: var(--space-3);
+  overflow-y: auto;
+  background: var(--mold-float-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(var(--mold-float-blur));
+  -webkit-backdrop-filter: blur(var(--mold-float-blur));
+}
+
+body.mold-fullscreen .editor-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .preview {
@@ -608,6 +865,41 @@ body {
 }
 
 @media (max-width: 900px) {
+  .editor-toolbar-group--fullscreen {
+    display: none !important;
+  }
+
+  body.mold-fullscreen {
+    overflow: auto;
+  }
+
+  body.mold-fullscreen .app-header,
+  body.mold-fullscreen .layout,
+  body.mold-fullscreen .layout > .panel.sidebar:first-of-type,
+  body.mold-fullscreen .panel.formulas,
+  body.mold-fullscreen .panel-mold,
+  body.mold-fullscreen .panel-mold-header,
+  body.mold-fullscreen #editor-toolbar:not([hidden]),
+  body.mold-fullscreen #mold-right-rail,
+  body.mold-fullscreen #mold-right-rail .panel-mold-header-actions,
+  body.mold-fullscreen .preview-chrome,
+  body.mold-fullscreen .preview-stage,
+  body.mold-fullscreen .preview.editor-active {
+    position: static;
+    inset: auto;
+    width: auto;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    transform: none;
+    max-width: none;
+    max-height: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: auto;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }

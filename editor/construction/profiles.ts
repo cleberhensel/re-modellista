@@ -68,6 +68,14 @@ export const CONSTRUCTION_PROFILES: Record<string, ConstructionProfile> = {
   },
 };
 
+const BLOUSE_ENGINE_GUIDE_ORDER: GuideKind[] = [
+  "cf_axis",
+  "dart_center",
+  "dart_plus",
+  "dart_minus",
+  "grain",
+];
+
 export function guideOrderForCount(
   profileId: string,
   guideCount: number
@@ -78,8 +86,9 @@ export function guideOrderForCount(
   if (guideCount >= order.length) return order.slice(0, guideCount);
   if (profileId === "blouse-front" || profileId === "blouse-back") {
     if (guideCount === 2) return ["cf_axis", "grain"];
-    if (guideCount === 3 && profileId === "blouse-back")
-      return ["cf_axis", "shoulder_line", "grain"];
+    if (guideCount <= BLOUSE_ENGINE_GUIDE_ORDER.length) {
+      return BLOUSE_ENGINE_GUIDE_ORDER.slice(0, guideCount);
+    }
   }
   return order.slice(0, guideCount);
 }

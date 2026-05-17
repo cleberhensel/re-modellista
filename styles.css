@@ -63,6 +63,12 @@ body {
   padding: var(--space-3);
 }
 
+.panel-mold {
+  display: flex;
+  flex-direction: column;
+  min-height: min(70vh, 720px);
+}
+
 .panel-mold-header {
   display: flex;
   align-items: center;
@@ -70,6 +76,7 @@ body {
   gap: var(--space-2);
   margin-bottom: var(--space-2);
   min-height: 2rem;
+  flex-shrink: 0;
 }
 
 .panel-mold-header h2 {
@@ -284,13 +291,6 @@ body {
 .preview-stage:has(.preview.editor-active) .preview {
   touch-action: none;
   overflow: hidden;
-}
-
-.preview .editor-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  min-height: 200px;
 }
 
 .panel h2 {
@@ -524,6 +524,9 @@ body {
 
 .preview-stage {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   min-height: var(--preview-min-height);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -548,6 +551,7 @@ body {
 }
 
 .preview {
+  flex: 1;
   min-height: var(--preview-min-height);
   overflow: auto;
   padding: var(--space-2);
@@ -559,6 +563,32 @@ body {
   width: 100%;
   max-width: 100%;
   height: auto;
+  background: #fafafa;
+}
+
+.preview .preview-grid line {
+  pointer-events: none;
+}
+
+.preview.editor-active {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview.editor-active .editor-svg {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: block;
+}
+
+.preview.editor-active .preview-grid {
+  pointer-events: none;
 }
 
 .preview .piece-label {

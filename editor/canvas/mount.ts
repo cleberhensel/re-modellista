@@ -3,8 +3,10 @@ import type { Selection } from "../selection.js";
 import { UndoStack } from "../undo.js";
 import {
   createViewport,
+  EDITOR_INITIAL_FIT,
   fitToDocument,
   screenToWorld,
+  visibleWorldBounds,
   viewportTransform,
   zoomAt,
   type ViewportState,
@@ -20,6 +22,11 @@ import { grainlineTool } from "../tools/grainline.js";
 import { measureTool } from "../tools/measure.js";
 import { movePieceTool } from "../tools/move-piece.js";
 import type { EditorTool, ToolContext } from "../tools/types.js";
+import { DEFAULT_PX_PER_CM } from "../../engine/constants.js";
+import {
+  renderPreviewGridInner,
+  unionGridBounds,
+} from "../../render/preview-grid.js";
 import { documentBounds } from "../document.js";
 import { deleteSelectedNode } from "../tools/delete-node.js";
 
@@ -35,9 +42,19 @@ const TOOLS: Record<string, EditorTool> = {
   "move-piece": movePieceTool,
 };
 
+function setSvgGridMarkup(gridG: SVGGElement, innerMarkup: string): void {
+  const doc = new DOMParser().parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg">${innerMarkup}</svg>`,
+    "image/svg+xml"
+  );
+  gridG.replaceChildren(...Array.from(doc.documentElement.childNodes));
+}
+
 export class CanvasController {
   private container: HTMLDivElement;
   private svg: SVGSVGElement | null = null;
+  private bgRect: SVGRectElement | null = null;
+  private gridG: SVGGElement | null = null;
   private viewportG: SVGGElement | null = null;
   private piecesG: SVGGElement | null = null;
   private doc: PatternDocument | null = null;
@@ -47,6 +64,7 @@ export class CanvasController {
   readonly undoStack = new UndoStack();
   private onChange: (() => void) | null = null;
   private spacePan = false;
+  private resizeObserver: ResizeObserver | null = null;
   private boundKeyDown: (e: KeyboardEvent) => void;
   private boundKeyUp: (e: KeyboardEvent) => void;
   private boundWheel: (e: WheelEvent) => void;
@@ -62,24 +80,44 @@ export class CanvasController {
     this.onChange = fn;
   }
 
+  private containerSize(): { width: number; height: number } {
+    const rect = this.container.getBoundingClientRect();
+    return {
+      width: Math.max(rect.width, 320),
+      height: Math.max(rect.height, 280),
+    };
+  }
+
   mount(): void {
     this.container.innerHTML = "";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "editor-svg");
     svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    const b = this.doc ? documentBounds(this.doc) : { minX: 0, minY: 0, maxX: 800, maxY: 600 };
-    const w = Math.max(400, b.maxX - b.minX + 80);
-    const h = Math.max(400, b.maxY - b.minY + 80);
-    svg.setAttribute("width", String(w));
-    svg.setAttribute("height", String(h));
-    svg.setAttribute("viewBox", `${b.minX - 40} ${b.minY - 40} ${w} ${h}`);
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "100%");
+
+    const { width, height } = this.containerSize();
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+    const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgRect.setAttribute("x", "0");
+    bgRect.setAttribute("y", "0");
+    bgRect.setAttribute("width", String(width));
+    bgRect.setAttribute("height", String(height));
+    bgRect.setAttribute("fill", "#f4f4f5");
+    bgRect.setAttribute("data-layer", "backdrop");
 
     const viewportG = document.createElementNS("http://www.w3.org/2000/svg", "g");
     viewportG.setAttribute("id", "editor-viewport");
+    const gridG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    gridG.setAttribute("data-layer", "grid");
+    gridG.setAttribute("class", "preview-grid");
     const piecesG = document.createElementNS("http://www.w3.org/2000/svg", "g");
     piecesG.setAttribute("data-layer", "pieces");
-    viewportG.appendChild(piecesG);
+    svg.appendChild(bgRect);
     svg.appendChild(viewportG);
+    viewportG.appendChild(gridG);
+    viewportG.appendChild(piecesG);
 
     this.container.appendChild(svg);
     this.container.classList.add("editor-active");
@@ -88,6 +126,8 @@ export class CanvasController {
       capture: true,
     });
     this.svg = svg;
+    this.bgRect = bgRect;
+    this.gridG = gridG;
     this.viewportG = viewportG;
     this.piecesG = piecesG;
 
@@ -97,13 +137,27 @@ export class CanvasController {
     window.addEventListener("keydown", this.boundKeyDown);
     window.addEventListener("keyup", this.boundKeyUp);
 
-    if (this.doc) {
-      fitToDocument(this.viewport, this.doc, w, h);
-    }
-    this.redraw();
+    this.resizeObserver = new ResizeObserver(() => {
+      if (!this.doc) return;
+      this.redraw();
+    });
+    this.resizeObserver.observe(this.container);
+
+    const fitOnce = () => {
+      if (!this.doc) {
+        this.redraw();
+        return;
+      }
+      const { width, height } = this.containerSize();
+      fitToDocument(this.viewport, this.doc, width, height, EDITOR_INITIAL_FIT);
+      this.redraw();
+    };
+    requestAnimationFrame(() => requestAnimationFrame(fitOnce));
   }
 
   unmount(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     window.removeEventListener("keydown", this.boundKeyDown);
     window.removeEventListener("keyup", this.boundKeyUp);
     this.container.removeEventListener("wheel", this.boundWheel, { capture: true });
@@ -112,6 +166,8 @@ export class CanvasController {
       this.svg.replaceWith(document.createComment("editor-unmounted"));
     }
     this.svg = null;
+    this.bgRect = null;
+    this.gridG = null;
     this.viewportG = null;
     this.piecesG = null;
     this.container.innerHTML = "";
@@ -120,8 +176,8 @@ export class CanvasController {
   setDocument(doc: PatternDocument): void {
     this.doc = doc;
     if (this.svg && this.piecesG) {
-      const rect = this.container.getBoundingClientRect();
-      fitToDocument(this.viewport, doc, rect.width || 800, rect.height || 600);
+      const { width, height } = this.containerSize();
+      fitToDocument(this.viewport, doc, width, height, EDITOR_INITIAL_FIT);
       this.redraw();
     }
   }
@@ -182,14 +238,36 @@ export class CanvasController {
 
   fit(): void {
     if (!this.doc || !this.svg) return;
-    const rect = this.container.getBoundingClientRect();
-    fitToDocument(this.viewport, this.doc, rect.width || 800, rect.height || 600);
+    const { width, height } = this.containerSize();
+    fitToDocument(this.viewport, this.doc, width, height);
     this.redraw();
   }
 
   redraw(): void {
-    if (!this.doc || !this.piecesG || !this.viewportG) return;
+    if (!this.doc || !this.piecesG || !this.gridG || !this.viewportG || !this.svg) {
+      return;
+    }
+    const { width, height } = this.containerSize();
+    this.svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    if (this.bgRect) {
+      this.bgRect.setAttribute("width", String(width));
+      this.bgRect.setAttribute("height", String(height));
+    }
+
     this.viewportG.setAttribute("transform", viewportTransform(this.viewport));
+
+    const docB = documentBounds(this.doc);
+    const visible = visibleWorldBounds(this.viewport, width, height);
+    const gridBounds = unionGridBounds(
+      { minX: docB.minX, minY: docB.minY, maxX: docB.maxX, maxY: docB.maxY },
+      visible
+    );
+    const pxPerCm = this.doc.meta.pxPerCm ?? DEFAULT_PX_PER_CM;
+    setSvgGridMarkup(
+      this.gridG,
+      renderPreviewGridInner(gridBounds, pxPerCm, this.viewport.scale)
+    );
+
     const activePieceId =
       this.selection.kind === "piece"
         ? this.selection.pieceId

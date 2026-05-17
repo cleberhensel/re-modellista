@@ -49,13 +49,25 @@ export function zoomAt(
   v.scale = newScale;
 }
 
+export interface FitToDocumentOptions {
+  padding?: number;
+  zoomFactor?: number;
+}
+
+export const EDITOR_INITIAL_FIT: FitToDocumentOptions = {
+  padding: 14,
+  zoomFactor: 1.75,
+};
+
 export function fitToDocument(
   v: ViewportState,
   doc: PatternDocument,
   width: number,
   height: number,
-  padding = 40
+  options: FitToDocumentOptions = {}
 ): void {
+  const padding = options.padding ?? 40;
+  const zoomFactor = options.zoomFactor ?? 1;
   const b = documentBounds(doc);
   const docW = b.maxX - b.minX || 400;
   const docH = b.maxY - b.minY || 400;
@@ -64,4 +76,21 @@ export function fitToDocument(
   v.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(scaleX, scaleY)));
   v.panX = padding - b.minX * v.scale;
   v.panY = padding - b.minY * v.scale;
+  if (zoomFactor !== 1) {
+    zoomAt(v, zoomFactor, width / 2, height / 2);
+  }
 }
+
+export function visibleWorldBounds(
+  v: ViewportState,
+  viewportWidth: number,
+  viewportHeight: number,
+  margin = 80
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  const minX = -v.panX / v.scale - margin;
+  const minY = -v.panY / v.scale - margin;
+  const maxX = (viewportWidth - v.panX) / v.scale + margin;
+  const maxY = (viewportHeight - v.panY) / v.scale + margin;
+  return { minX, minY, maxX, maxY };
+}
+

@@ -6,6 +6,7 @@ import {
   DEFAULT_SEAM_ALLOWANCE_CM,
   seamAllowanceSegments,
 } from "./seam-allowance.js";
+import { renderPreviewGrid } from "./preview-grid.js";
 
 export interface RenderOptions {
   seamAllowanceCm?: number;
@@ -165,7 +166,14 @@ export function renderPositionedPiecesToSvg(
   const pad = CUT_MARKER_VIEW_OUTSET_PX;
   const w = bounds.width + pad;
   const h = bounds.height + pad;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${body}</svg>`;
+  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
+  const grid = renderPreviewGrid(
+    { minX: -pad, minY: -pad, maxX: -pad + w, maxY: -pad + h },
+    pxPerCm,
+    1,
+    pad
+  );
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${grid}${body}</svg>`;
 }
 
 export function renderDraftToSvg(
@@ -182,5 +190,12 @@ export function renderDraftToSvg(
   const pad = CUT_MARKER_VIEW_OUTSET_PX;
   const w = bounds.width + pad;
   const h = bounds.height + pad;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${body}</svg>`;
+  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
+  const grid = renderPreviewGrid(
+    { minX: -pad, minY: -pad, maxX: -pad + w, maxY: -pad + h },
+    pxPerCm,
+    1,
+    pad
+  );
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${grid}${body}</svg>`;
 }

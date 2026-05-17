@@ -1,4 +1,5 @@
 import { syncConstructionGuides } from "./construction/sync.js";
+import { cubicPointAt } from "./geometry/bezier.js";
 import type {
   EditablePath,
   PatternDocument,
@@ -139,6 +140,69 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
+const MIN_INSERT_GAP_CM = 0.12;
+const MIN_INSERT_GAP_FLOOR_CM = 0.025;
+
+function edgeChordLength(path: EditablePath, edgeIndex: number): number {
+  const a = nodeAt(path, edgeIndex);
+  const b = nodeAt(path, edgeIndex + 1);
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+function minInsertGapForEdge(path: EditablePath, edgeIndex: number): number {
+  const chord = edgeChordLength(path, edgeIndex);
+  return Math.min(MIN_INSERT_GAP_CM, Math.max(chord * 0.12, MIN_INSERT_GAP_FLOOR_CM));
+}
+
+export function pointOnEdgeAt(
+  path: EditablePath,
+  edgeIndex: number,
+  t: number
+): Point2 {
+  const a = nodeAt(path, edgeIndex);
+  const b = nodeAt(path, edgeIndex + 1);
+  const kind = path.segmentKinds[edgeIndex] ?? "line";
+  if (kind === "cubic" && a.handleOut && b.handleIn) {
+    return cubicPointAt(a, a.handleOut, b.handleIn, b, t);
+  }
+  return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
+}
+
+export function canInsertOnEdge(
+  path: EditablePath,
+  edgeIndex: number,
+  t: number
+): boolean {
+  if (edgeIndex < 0 || edgeIndex >= edgeCount(path) || t <= 0 || t >= 1) {
+    return false;
+  }
+  const a = nodeAt(path, edgeIndex);
+  const b = nodeAt(path, edgeIndex + 1);
+  const gap = minInsertGapForEdge(path, edgeIndex);
+  const pt = pointOnEdgeAt(path, edgeIndex, t);
+  return (
+    Math.hypot(pt.x - a.x, pt.y - a.y) >= gap &&
+    Math.hypot(pt.x - b.x, pt.y - b.y) >= gap
+  );
+}
+
+export function resolveInsertParam(
+  path: EditablePath,
+  edgeIndex: number,
+  preferredT: number
+): number | null {
+  if (canInsertOnEdge(path, edgeIndex, preferredT)) return preferredT;
+  const steps = 48;
+  for (let i = 1; i <= steps; i++) {
+    const delta = (i / steps) * 0.5;
+    const left = preferredT - delta;
+    const right = preferredT + delta;
+    if (canInsertOnEdge(path, edgeIndex, left)) return left;
+    if (canInsertOnEdge(path, edgeIndex, right)) return right;
+  }
+  return null;
+}
+
 export function insertNodeOnEdge(
   doc: PatternDocument,
   pieceId: string,
@@ -152,16 +216,17 @@ export function insertNodeOnEdge(
   if (!path) return null;
   const edges = edgeCount(path);
   if (edgeIndex < 0 || edgeIndex >= edges) return null;
-  if (t <= 0.05 || t >= 0.95) return null;
+  if (!canInsertOnEdge(path, edgeIndex, t)) return null;
 
   const a = nodeAt(path, edgeIndex);
   const b = nodeAt(path, edgeIndex + 1);
   const kind = path.segmentKinds[edgeIndex] ?? "line";
+  const insertPoint = pointOnEdgeAt(path, edgeIndex, t);
 
   const newNode: PathNode = {
     id: nextId("n"),
-    x: lerp(a.x, b.x, t),
-    y: lerp(a.y, b.y, t),
+    x: insertPoint.x,
+    y: insertPoint.y,
   };
 
   if (kind === "cubic" && a.handleOut && b.handleIn) {

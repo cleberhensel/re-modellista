@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { hasManualEdits } from "./editor/document.js";
 import type { PatternDocument } from "./editor/types.js";
-
-function hasSavedPatternView(doc: PatternDocument | null): boolean {
-  return doc !== null && doc.meta.editState !== "draft";
-}
 
 function shouldConfirmRegenerate(doc: PatternDocument | null): boolean {
   if (!doc) return false;
-  return hasSavedPatternView(doc);
+  return hasManualEdits(doc) || doc.meta.editState !== "draft";
 }
 
 describe("shouldConfirmRegenerate", () => {

@@ -85,19 +85,23 @@ export function renderDocumentSvg(
         `<circle cx="${cx}" cy="${cy}" r="5" fill="#017eba" stroke="#fff" stroke-width="1.5"/>`
       );
       if (node.handleIn) {
+        const hx = node.handleIn.x + piece.layout.x;
+        const hy = node.handleIn.y + piece.layout.y;
         parts.push(
-          `<line x1="${cx}" y1="${cy}" x2="${node.handleIn.x + piece.layout.x}" y2="${node.handleIn.y + piece.layout.y}" stroke="#017eba" stroke-width="1" stroke-dasharray="4 3"/>`
+          `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#017eba" stroke-width="1.25" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>`
         );
         parts.push(
-          `<circle cx="${node.handleIn.x + piece.layout.x}" cy="${node.handleIn.y + piece.layout.y}" r="3" fill="#017eba"/>`
+          `<circle cx="${hx}" cy="${hy}" r="4" fill="#017eba" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
         );
       }
       if (node.handleOut) {
+        const hx = node.handleOut.x + piece.layout.x;
+        const hy = node.handleOut.y + piece.layout.y;
         parts.push(
-          `<line x1="${cx}" y1="${cy}" x2="${node.handleOut.x + piece.layout.x}" y2="${node.handleOut.y + piece.layout.y}" stroke="#017eba" stroke-width="1" stroke-dasharray="4 3"/>`
+          `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#017eba" stroke-width="1.25" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>`
         );
         parts.push(
-          `<circle cx="${node.handleOut.x + piece.layout.x}" cy="${node.handleOut.y + piece.layout.y}" r="3" fill="#017eba"/>`
+          `<circle cx="${hx}" cy="${hy}" r="4" fill="#017eba" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
         );
       }
     }

@@ -6,6 +6,7 @@ import {
   hasManualEdits,
   insertNodeOnEdge,
   moveNode,
+  resolveInsertParam,
   removeNode,
   resetIdCounter,
 } from "./document.js";
@@ -67,6 +68,22 @@ describe("document", () => {
     const id = insertNodeOnEdge(doc, "test", "cut-0", 0, 0.5);
     expect(id).toBeTruthy();
     expect(doc.pieces[0]!.paths[0]!.nodes).toHaveLength(4);
+  });
+
+  it("resolveInsertParam slides away from vertex on short edge", () => {
+    const doc = sampleDoc();
+    moveNode(doc, "test", "cut-0", "n2", 0.35, 0);
+    const path = doc.pieces[0]!.paths[0]!;
+    expect(resolveInsertParam(path, 0, 0.98)).not.toBeNull();
+    expect(resolveInsertParam(path, 0, 0.98)).toBeLessThan(0.9);
+  });
+
+  it("insertNodeOnEdge allows multiple inserts on split edges", () => {
+    const doc = sampleDoc();
+    expect(insertNodeOnEdge(doc, "test", "cut-0", 0, 0.5)).toBeTruthy();
+    expect(insertNodeOnEdge(doc, "test", "cut-0", 0, 0.25)).toBeTruthy();
+    expect(insertNodeOnEdge(doc, "test", "cut-0", 1, 0.75)).toBeTruthy();
+    expect(doc.pieces[0]!.paths[0]!.nodes).toHaveLength(6);
   });
 
   it("applyManualEdits clears dirty state", () => {

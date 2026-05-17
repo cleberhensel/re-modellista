@@ -8,24 +8,33 @@ import {
 } from "./editor/document.js";
 import type { PatternDocument } from "./editor/types.js";
 import { CanvasController } from "./editor/canvas/mount.js";
-import { renderDocumentToSvg } from "./editor/export/to-svg.js";
 
-const EDITOR_STORAGE_KEY = "remodellista.editorMode";
-
-let editorEnabled = false;
-let moldFullscreen = false;
-let actionsHome: HTMLElement | null = null;
-let formulasHome: HTMLElement | null = null;
 let patternDocument: PatternDocument | null = null;
 let canvasController: CanvasController | null = null;
 let pendingRegenerateAction: (() => void) | null = null;
+let seamPreviewMode = false;
 
 export function isEditorEnabled(): boolean {
-  return editorEnabled;
+  return true;
 }
 
 export function isMoldFullscreen(): boolean {
-  return moldFullscreen;
+  return true;
+}
+
+export function isSeamPreviewMode(): boolean {
+  return seamPreviewMode;
+}
+
+export function setSeamPreviewMode(enabled: boolean): void {
+  if (seamPreviewMode === enabled) return;
+  seamPreviewMode = enabled;
+  canvasController?.setSeamPreviewMode(enabled);
+  document.body.classList.toggle("seam-preview-mode", enabled);
+  syncEditorChrome();
+  if (!enabled) {
+    setActiveToolButton("pan");
+  }
 }
 
 function updateAppHeaderOffset(): void {
@@ -36,67 +45,6 @@ function updateAppHeaderOffset(): void {
       `${header.offsetHeight}px`
     );
   }
-}
-
-function mountFullscreenRail(): void {
-  const actions = document.querySelector(".panel-mold-header-actions");
-  const formulas = document.querySelector(".panel.formulas");
-  const rail = document.getElementById("mold-right-rail");
-  if (
-    !(actions instanceof HTMLElement) ||
-    !(formulas instanceof HTMLElement) ||
-    !(rail instanceof HTMLElement)
-  ) {
-    return;
-  }
-  if (!actionsHome) actionsHome = actions.parentElement;
-  if (!formulasHome) formulasHome = formulas.parentElement;
-  rail.hidden = false;
-  rail.appendChild(actions);
-  rail.appendChild(formulas);
-}
-
-function unmountFullscreenRail(): void {
-  const actions = document.querySelector(".panel-mold-header-actions");
-  const formulas = document.querySelector(".panel.formulas");
-  const rail = document.getElementById("mold-right-rail");
-  const headerEnd = document.querySelector(".panel-mold-header-end");
-  const layout = document.querySelector(".layout");
-  if (
-    !(actions instanceof HTMLElement) ||
-    !(formulas instanceof HTMLElement) ||
-    !(rail instanceof HTMLElement) ||
-    !(headerEnd instanceof HTMLElement) ||
-    !(layout instanceof HTMLElement)
-  ) {
-    return;
-  }
-  rail.hidden = true;
-  if (actionsHome) actionsHome.appendChild(actions);
-  else headerEnd.appendChild(actions);
-  if (formulasHome) formulasHome.appendChild(formulas);
-  else layout.appendChild(formulas);
-}
-
-function setMoldFullscreen(enabled: boolean): void {
-  if (moldFullscreen === enabled) return;
-  moldFullscreen = enabled;
-  document.body.classList.toggle("mold-fullscreen", enabled);
-  if (enabled) mountFullscreenRail();
-  else unmountFullscreenRail();
-  const btn = document.getElementById("editor-fullscreen-toggle");
-  if (btn instanceof HTMLButtonElement) {
-    btn.classList.toggle("is-active", enabled);
-    btn.setAttribute("aria-pressed", enabled ? "true" : "false");
-    btn.setAttribute("aria-label", enabled ? "Sair da tela cheia" : "Tela cheia");
-    btn.title = enabled ? "Sair da tela cheia (Esc)" : "Tela cheia (F)";
-  }
-  updateAppHeaderOffset();
-  requestAnimationFrame(() => {
-    updateAppHeaderOffset();
-    canvasController?.fit();
-    requestAnimationFrame(() => canvasController?.fit());
-  });
 }
 
 export function getPatternDocument(): PatternDocument | null {
@@ -111,14 +59,6 @@ export function clearSavedPatternView(): void {
   patternDocument = null;
 }
 
-function saveEditorModePreference(enabled: boolean): void {
-  try {
-    localStorage.setItem(EDITOR_STORAGE_KEY, enabled ? "1" : "0");
-  } catch {
-    /* ignore */
-  }
-}
-
 function isInputFocused(): boolean {
   const el = document.activeElement;
   return (
@@ -128,35 +68,33 @@ function isInputFocused(): boolean {
   );
 }
 
-function syncEditorChrome(): void {
-  const toolbar = document.getElementById("editor-toolbar");
-  const applyBtn = document.getElementById("editor-apply-edits");
+export function syncEditorChrome(): void {
   const resetBtn = document.getElementById("editor-reset-edits");
-  const toggle = document.getElementById("editor-mode-toggle");
-  if (toggle instanceof HTMLInputElement) {
-    toggle.setAttribute("aria-label", editorEnabled ? "Editor" : "Preview");
-  }
-  if (toolbar) toolbar.hidden = !editorEnabled;
-  const fullscreenSep = document.querySelector(".editor-toolbar-separator--fullscreen");
-  const fullscreenGroup = document.querySelector(".editor-toolbar-group--fullscreen");
-  if (fullscreenSep instanceof HTMLElement) fullscreenSep.hidden = !editorEnabled;
-  if (fullscreenGroup instanceof HTMLElement) fullscreenGroup.hidden = !editorEnabled;
-  if (!editorEnabled && moldFullscreen) {
-    setMoldFullscreen(false);
-  }
-  const dirty = editorEnabled && patternDocument && hasManualEdits(patternDocument);
+  const previewBtn = document.getElementById("editor-seam-preview-toggle");
+  const toolbar = document.getElementById("editor-toolbar");
   const canReset =
-    editorEnabled &&
     patternDocument &&
     (hasManualEdits(patternDocument) ||
       patternDocument.meta.editState === "applied");
-  if (applyBtn instanceof HTMLButtonElement) {
-    applyBtn.hidden = !editorEnabled;
-    applyBtn.disabled = !dirty;
-  }
   if (resetBtn instanceof HTMLButtonElement) {
-    resetBtn.hidden = !editorEnabled;
-    resetBtn.disabled = !canReset;
+    resetBtn.disabled = seamPreviewMode || !canReset;
+  }
+  if (previewBtn instanceof HTMLButtonElement) {
+    previewBtn.classList.toggle("is-active", seamPreviewMode);
+    previewBtn.setAttribute("aria-pressed", seamPreviewMode ? "true" : "false");
+  }
+  if (toolbar) {
+    const editOnlyTools = ["select", "undo", "redo"];
+    for (const toolId of editOnlyTools) {
+      const btn = toolbar.querySelector(`[data-tool="${toolId}"]`);
+      if (btn instanceof HTMLButtonElement) {
+        btn.disabled = seamPreviewMode;
+      }
+    }
+  }
+  const previewEl = document.getElementById("preview");
+  if (previewEl) {
+    previewEl.classList.toggle("seam-preview-mode", seamPreviewMode);
   }
 }
 
@@ -174,14 +112,20 @@ function updateUndoButtons(): void {
   syncEditorChrome();
 }
 
-function setActiveToolButton(toolId: string): void {
-  canvasController?.setActiveTool(toolId);
+function syncToolbarActiveTool(toolId: string): void {
   const toolbarEl = document.getElementById("editor-toolbar");
   if (!toolbarEl) return;
   for (const b of toolbarEl.querySelectorAll<HTMLButtonElement>("[data-tool]")) {
-    if (b.dataset.tool === "undo" || b.dataset.tool === "redo") continue;
-    b.classList.toggle("is-active", b.dataset.tool === toolId);
+    const t = b.dataset.tool;
+    if (!t || t === "undo" || t === "redo" || t === "seam-preview") continue;
+    b.classList.toggle("is-active", t === toolId);
   }
+}
+
+function setActiveToolButton(toolId: string): void {
+  if (seamPreviewMode && toolId !== "pan") return;
+  canvasController?.setActiveTool(toolId);
+  syncToolbarActiveTool(toolId);
 }
 
 function syncDocumentFromCanvas(): PatternDocument | null {
@@ -198,17 +142,6 @@ export function applyEditorEdits(): void {
   syncEditorChrome();
 }
 
-export function commitEditorOnExit(): void {
-  syncDocumentFromCanvas();
-  if (!patternDocument) return;
-  if (hasManualEdits(patternDocument)) {
-    applyManualEdits(patternDocument);
-  }
-  if (patternDocument.meta.editState === "draft") {
-    patternDocument = null;
-  }
-}
-
 export function resetEditorEdits(
   draft: DraftResult,
   options: RenderOptions,
@@ -216,10 +149,6 @@ export function resetEditorEdits(
   onDocumentUpdate: (doc: PatternDocument | null) => void
 ): void {
   clearSavedPatternView();
-  if (!editorEnabled) {
-    onDocumentUpdate(null);
-    return;
-  }
   mountEditorCanvas(draft, options, previewEl, onDocumentUpdate, true);
 }
 
@@ -231,7 +160,6 @@ export function mountEditorCanvas(
   forceReset = false,
   regenerateKey?: string
 ): void {
-  if (!editorEnabled) return;
   const opts = {
     productId: draft.productId,
     seamAllowanceCm: options.seamAllowanceCm ?? 1,
@@ -263,9 +191,16 @@ export function mountEditorCanvas(
       onDocumentUpdate(patternDocument);
       updateUndoButtons();
     });
+    canvasController.setOnToolChange(syncToolbarActiveTool);
     canvasController.mount();
+    if (seamPreviewMode) {
+      canvasController.setSeamPreviewMode(true);
+    }
   }
   canvasController.setDocument(patternDocument);
+  if (!seamPreviewMode) {
+    syncToolbarActiveTool(canvasController.getActiveToolId());
+  }
   onDocumentUpdate(patternDocument);
   updateUndoButtons();
 }
@@ -276,17 +211,27 @@ export function unmountEditorCanvas(): void {
   syncEditorChrome();
 }
 
-export function renderSavedPatternPreview(options: RenderOptions): string | null {
-  if (!patternDocument || !hasSavedPatternView(patternDocument)) return null;
-  return renderDocumentToSvg(patternDocument, {
-    seamAllowanceCm: options.seamAllowanceCm ?? patternDocument.meta.seamAllowanceCm,
-    pxPerCm: options.pxPerCm ?? patternDocument.meta.pxPerCm,
-  });
-}
-
 export function shouldConfirmRegenerate(): boolean {
   if (!patternDocument) return false;
-  return hasSavedPatternView(patternDocument);
+  return (
+    hasManualEdits(patternDocument) || hasSavedPatternView(patternDocument)
+  );
+}
+
+function setRegenerateDialogOpen(open: boolean): void {
+  document.body.classList.toggle("editor-dialog-open", open);
+}
+
+function bindRegenerateDialog(dialog: HTMLDialogElement): void {
+  dialog.addEventListener("close", () => {
+    setRegenerateDialogOpen(false);
+  });
+  dialog.addEventListener("cancel", (e) => {
+    e.preventDefault();
+    pendingRegenerateAction = null;
+    window.dispatchEvent(new CustomEvent("remodellista-regenerate-cancel"));
+    dialog.close();
+  });
 }
 
 export function pendingRegenerate(action: () => void, revert?: () => void): void {
@@ -306,6 +251,7 @@ export function pendingRegenerate(action: () => void, revert?: () => void): void
       };
       window.addEventListener("remodellista-regenerate-cancel", cancelHandler);
     }
+    setRegenerateDialogOpen(true);
     dialog.showModal();
   } else {
     const run = pendingRegenerateAction;
@@ -319,46 +265,24 @@ export function initEditor(
   renderOptions: () => RenderOptions,
   onDocumentUpdate: (doc: PatternDocument | null) => void
 ): void {
-  const toggle = document.getElementById("editor-mode-toggle");
   const previewEl = document.getElementById("preview");
   const dialog = document.getElementById("editor-regenerate-dialog");
-  const applyBtn = document.getElementById("editor-apply-edits");
   const resetBtn = document.getElementById("editor-reset-edits");
 
-  if (!(toggle instanceof HTMLInputElement)) {
-    throw new Error("missing #editor-mode-toggle");
-  }
   if (!(previewEl instanceof HTMLDivElement)) {
     throw new Error("missing #preview");
   }
 
-  editorEnabled = false;
-  toggle.checked = false;
+  if (dialog instanceof HTMLDialogElement) {
+    bindRegenerateDialog(dialog);
+  }
+
   patternDocument = null;
+  document.body.classList.add("mold-fullscreen");
   updateAppHeaderOffset();
   syncEditorChrome();
 
-  const fullscreenBtn = document.getElementById("editor-fullscreen-toggle");
-  if (fullscreenBtn instanceof HTMLButtonElement) {
-    fullscreenBtn.addEventListener("click", () => {
-      if (!editorEnabled) return;
-      setMoldFullscreen(!moldFullscreen);
-    });
-  }
-
   window.addEventListener("resize", updateAppHeaderOffset);
-
-  toggle.addEventListener("change", () => {
-    editorEnabled = toggle.checked;
-    saveEditorModePreference(editorEnabled);
-    if (!editorEnabled) {
-      commitEditorOnExit();
-      unmountEditorCanvas();
-      onDocumentUpdate(patternDocument);
-    }
-    syncEditorChrome();
-    window.dispatchEvent(new CustomEvent("remodellista-rerender"));
-  });
 
   const toolbar = document.getElementById("editor-toolbar");
   if (toolbar) {
@@ -367,6 +291,10 @@ export function initEditor(
       if (!(btn instanceof HTMLButtonElement)) return;
       const tool = btn.dataset.tool;
       if (!tool) return;
+      if (tool === "seam-preview") {
+        setSeamPreviewMode(!seamPreviewMode);
+        return;
+      }
       if (tool === "undo") {
         canvasController?.undo();
         patternDocument = canvasController?.getDocument() ?? patternDocument;
@@ -394,13 +322,6 @@ export function initEditor(
         return;
       }
       setActiveToolButton(tool);
-    });
-  }
-
-  if (applyBtn) {
-    applyBtn.addEventListener("click", () => {
-      applyEditorEdits();
-      onDocumentUpdate(patternDocument);
     });
   }
 
@@ -432,22 +353,17 @@ export function initEditor(
   }
 
   window.addEventListener("keydown", (e) => {
-    if (moldFullscreen && e.key === "Escape" && !isInputFocused()) {
-      e.preventDefault();
-      setMoldFullscreen(false);
-      return;
-    }
-    if (!editorEnabled || isInputFocused()) return;
-    if (e.key === "f" || e.key === "F") {
+    if (isInputFocused()) return;
+    if (e.key === "p" || e.key === "P") {
       if (!(e.metaKey || e.ctrlKey || e.altKey)) {
         e.preventDefault();
-        setMoldFullscreen(!moldFullscreen);
+        setSeamPreviewMode(!seamPreviewMode);
       }
       return;
     }
+    if (seamPreviewMode) return;
     if (e.key === "v" || e.key === "V") setActiveToolButton("select");
     else if (e.key === "h" || e.key === "H") setActiveToolButton("pan");
-    else if (e.key === "n" || e.key === "N") setActiveToolButton("add-node");
     else if ((e.metaKey || e.ctrlKey) && e.key === "z") {
       e.preventDefault();
       if (e.shiftKey) canvasController?.redo();

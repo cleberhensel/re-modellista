@@ -10,10 +10,53 @@
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="mold-fullscreen">
   <header class="app-header">
     <div class="app-header-brand">
       <h1 class="app-title">Remodellista</h1>
+    </div>
+    <div id="editor-toolbar" class="editor-toolbar" role="toolbar" aria-label="Ferramentas do molde">
+      <div class="editor-toolbar-group">
+        <button type="button" data-tool="pan" class="editor-tool-btn is-active" title="Mover vista (H)" aria-label="Mover vista">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10V5a2 2 0 0 0-4 0v9c0 5 3 8 7 8 2.5 0 4-.8 5-2"/></svg>
+        </button>
+        <button type="button" data-tool="select" class="editor-tool-btn" title="Seleccionar (V)" aria-label="Seleccionar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l7.07 16.97 2.51-7.39 7.39-2.51L4 4z"/></svg>
+        </button>
+        <button type="button" data-tool="seam-preview" id="editor-seam-preview-toggle" class="editor-tool-btn" aria-pressed="false" title="Margem de costura (P)" aria-label="Margem de costura">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" fill="none"/><circle cx="12" cy="12" r="3" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="editor-toolbar-separator" aria-hidden="true"></div>
+      <div class="editor-toolbar-group">
+        <button type="button" data-tool="undo" class="editor-tool-btn" title="Desfazer (Ctrl+Z)" aria-label="Desfazer" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H12"/></svg>
+        </button>
+        <button type="button" data-tool="redo" class="editor-tool-btn" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H12"/></svg>
+        </button>
+        <button type="button" id="editor-reset-edits" class="editor-tool-btn" title="Limpar edições" aria-label="Limpar edições" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+        <button type="button" data-tool="zoom-out" class="editor-tool-btn" title="Zoom −" aria-label="Zoom menos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M8 11h6"/></svg>
+        </button>
+        <button type="button" data-tool="zoom-fit" class="editor-tool-btn" title="Ajustar à janela" aria-label="Ajustar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M16 21h5v-5M8 21H3v-5"/><path d="M9 9h6v6H9z"/></svg>
+        </button>
+        <button type="button" data-tool="zoom-in" class="editor-tool-btn" title="Zoom +" aria-label="Zoom mais">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/></svg>
+        </button>
+      </div>
+      <div class="editor-toolbar-separator" aria-hidden="true"></div>
+      <div class="editor-toolbar-group">
+        <button type="button" id="copy-svg" class="editor-tool-btn" title="Copiar SVG" aria-label="Copiar SVG">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button type="button" id="download-pdf" class="editor-tool-btn" title="Exportar PDF" aria-label="Exportar PDF">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        </button>
+      </div>
     </div>
   </header>
   <main class="layout">
@@ -171,123 +214,19 @@
 
     </section>
     <section class="panel panel-mold">
-      <div class="panel-mold-header">
-        <h2>Molde</h2>
-        <div class="panel-mold-header-end">
-<div id="editor-toolbar" class="editor-toolbar" hidden>
-        <div class="editor-toolbar-group" role="toolbar" aria-label="Ferramentas do molde">
-          <button type="button" data-tool="select" class="editor-tool-btn is-active" title="Seleccionar (V)" aria-label="Seleccionar">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l7.07 16.97 2.51-7.39 7.39-2.51L4 4z"/></svg>
-          </button>
-          <button type="button" data-tool="add-node" class="editor-tool-btn" title="Adicionar nó (N)" aria-label="Adicionar nó">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 5v4M12 15v4M5 12h4M15 12h4"/></svg>
-          </button>
-          <button type="button" data-tool="delete-node" class="editor-tool-btn" title="Remover nó" aria-label="Remover nó">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M8 12h8"/></svg>
-          </button>
-        </div>
-        <div class="editor-toolbar-separator" aria-hidden="true"></div>
-        <div class="editor-toolbar-group">
-          <button type="button" data-tool="undo" class="editor-tool-btn" title="Desfazer (Ctrl+Z)" aria-label="Desfazer" disabled>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H12"/></svg>
-          </button>
-          <button type="button" data-tool="redo" class="editor-tool-btn" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer" disabled>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H12"/></svg>
-          </button>
-        </div>
-        <div class="editor-toolbar-separator" aria-hidden="true"></div>
-        <div class="editor-toolbar-group editor-toolbar-group--nav">
-          <button type="button" data-tool="pan" class="editor-tool-btn" title="Mover vista (H)" aria-label="Mover vista">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10V5a2 2 0 0 0-4 0v9c0 5 3 8 7 8 2.5 0 4-.8 5-2"/></svg>
-          </button>
-          <button type="button" data-tool="zoom-out" class="editor-tool-btn" title="Zoom −" aria-label="Zoom menos">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M8 11h6"/></svg>
-          </button>
-          <button type="button" data-tool="zoom-fit" class="editor-tool-btn" title="Ajustar à janela" aria-label="Ajustar">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M16 21h5v-5M8 21H3v-5"/><path d="M9 9h6v6H9z"/></svg>
-          </button>
-          <button type="button" data-tool="zoom-in" class="editor-tool-btn" title="Zoom +" aria-label="Zoom mais">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/></svg>
-          </button>
-        </div>
-        <div class="editor-toolbar-separator editor-toolbar-separator--fullscreen" aria-hidden="true" hidden></div>
-        <div class="editor-toolbar-group editor-toolbar-group--fullscreen" hidden>
-          <button
-            type="button"
-            id="editor-fullscreen-toggle"
-            class="editor-tool-btn editor-fullscreen-tool"
-            aria-pressed="false"
-            aria-label="Tela cheia"
-            title="Tela cheia (F)"
-          >
-            <svg class="editor-fullscreen-icon editor-fullscreen-icon--enter" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 3H3v5M16 3h5v5M16 21h5v-5M8 21H3v-5"/>
-            </svg>
-            <svg class="editor-fullscreen-icon editor-fullscreen-icon--exit" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 14h6v6M14 4h6v6M14 20h6v-6M4 10h6V4"/>
-            </svg>
-          </button>
-        </div>
-          </div>
-
-          <div class="panel-mold-header-actions">
-            <button type="button" id="editor-apply-edits" class="btn btn-primary btn-compact editor-header-btn editor-action-btn editor-action-btn--apply" hidden>Aplicar</button>
-            <button type="button" id="editor-reset-edits" class="btn btn-secondary btn-compact editor-header-btn editor-action-btn editor-action-btn--reset" hidden title="Limpar edições" aria-label="Limpar edições">
-              <span class="editor-action-label">Limpar</span>
-              <svg class="editor-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-                <path d="M10 11v6M14 11v6"/>
-              </svg>
-            </button>
-            <button id="copy-svg" type="button" class="btn btn-secondary btn-compact editor-action-btn editor-action-btn--copy-svg" title="Copiar SVG" aria-label="Copiar SVG">
-              <span class="editor-action-label">SVG</span>
-              <svg class="editor-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-            </button>
-            <button id="download-pdf" type="button" class="btn btn-secondary btn-compact editor-action-btn editor-action-btn--export" title="Exportar PDF" aria-label="Exportar PDF">
-              <span class="editor-action-label">PDF</span>
-              <svg class="editor-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3v12M8 11l4 4 4-4"/>
-                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-      <dialog id="editor-regenerate-dialog" class="editor-dialog">
-        <h3>Regenerar molde?</h3>
-        <p>As edições manuais no modo editor serão perdidas. O molde será calculado de novo com as medidas actuais.</p>
-        <div class="editor-dialog-actions">
-          <button type="button" id="editor-regenerate-cancel" class="btn btn-secondary">Cancelar</button>
-          <button type="button" id="editor-regenerate-confirm" class="btn btn-primary">Regenerar</button>
-        </div>
-      </dialog>
       <div class="preview-stage">
-        <div class="preview-chrome">
-          <div class="preview-chrome-controls">
-            <label class="editor-mode-toggle">
-              <input type="checkbox" id="editor-mode-toggle" class="editor-mode-toggle-input" aria-label="Preview">
-              <span class="editor-mode-toggle-track">
-                <span class="editor-mode-toggle-thumb" aria-hidden="true"></span>
-                <span class="editor-mode-toggle-label">Preview</span>
-                <span class="editor-mode-toggle-label">Editor</span>
-              </span>
-            </label>
-          </div>
-        </div>
-        <div class="preview" id="preview"></div>
+        <div class="preview editor-active" id="preview"></div>
       </div>
-    </section>
-    <div id="mold-right-rail" class="mold-right-rail" hidden></div>
-    <section class="panel formulas sidebar">
-      <h2>Fórmulas (resultado)</h2>
-      <pre id="formulas"></pre>
-      <h2>Contexto</h2>
-      <pre id="context"></pre>
     </section>
   </main>
+  <dialog id="editor-regenerate-dialog" class="editor-dialog">
+    <h3>Regenerar molde?</h3>
+    <p>As edições manuais serão perdidas. O molde será calculado de novo com as medidas actuais.</p>
+    <div class="editor-dialog-actions">
+      <button type="button" id="editor-regenerate-cancel" class="btn btn-secondary">Cancelar</button>
+      <button type="button" id="editor-regenerate-confirm" class="btn btn-primary">Regenerar</button>
+    </div>
+  </dialog>
   <script type="module" src="/app.ts"></script>
 </body>
 </html>

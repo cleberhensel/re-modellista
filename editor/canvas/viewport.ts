@@ -52,11 +52,13 @@ export function zoomAt(
 export interface FitToDocumentOptions {
   padding?: number;
   zoomFactor?: number;
+  contentInsetLeft?: number;
 }
 
 export const EDITOR_INITIAL_FIT: FitToDocumentOptions = {
-  padding: 14,
-  zoomFactor: 1.75,
+  padding: 50,
+  zoomFactor: 1,
+  contentInsetLeft: 250,
 };
 
 export function fitToDocument(
@@ -68,16 +70,22 @@ export function fitToDocument(
 ): void {
   const padding = options.padding ?? 40;
   const zoomFactor = options.zoomFactor ?? 1;
+  const insetLeft = options.contentInsetLeft ?? 0;
   const b = documentBounds(doc);
   const docW = b.maxX - b.minX || 400;
   const docH = b.maxY - b.minY || 400;
-  const scaleX = (width - padding * 2) / docW;
+  const availW = Math.max(1, width - insetLeft);
+  const scaleX = (availW - padding * 2) / docW;
   const scaleY = (height - padding * 2) / docH;
   v.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(scaleX, scaleY)));
-  v.panX = padding - b.minX * v.scale;
-  v.panY = padding - b.minY * v.scale;
+  const docCx = (b.minX + b.maxX) / 2;
+  const docCy = (b.minY + b.maxY) / 2;
+  const viewCx = insetLeft + availW / 2;
+  const viewCy = height / 2;
+  v.panX = viewCx - docCx * v.scale;
+  v.panY = viewCy - docCy * v.scale;
   if (zoomFactor !== 1) {
-    zoomAt(v, zoomFactor, width / 2, height / 2);
+    zoomAt(v, zoomFactor, viewCx, viewCy);
   }
 }
 

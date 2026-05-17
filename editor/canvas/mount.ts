@@ -13,8 +13,7 @@ import {
 } from "./viewport.js";
 import { renderDocumentSvg } from "./render.js";
 import { selectTool } from "../tools/select.js";
-import { addNodeTool } from "../tools/add-node.js";
-import { deleteNodeTool } from "../tools/delete-node.js";
+import { insertNodeAtPointer } from "../tools/add-node.js";
 import { panTool, handleWheel } from "../tools/pan-zoom.js";
 import { bezierTool } from "../tools/bezier.js";
 import { notchTool } from "../tools/notch.js";
@@ -29,12 +28,13 @@ import {
 } from "../../render/preview-grid.js";
 import { documentBounds } from "../document.js";
 import { deleteSelectedNode } from "../tools/delete-node.js";
+import { pickEdge } from "./hit-test.js";
+import { documentToDraftPieces } from "../adapters/from-draft.js";
+import { renderPieceSvg } from "../../render/svg.js";
 
 const TOOLS: Record<string, EditorTool> = {
   select: selectTool,
   pan: panTool,
-  "add-node": addNodeTool,
-  "delete-node": deleteNodeTool,
   bezier: bezierTool,
   notch: notchTool,
   grainline: grainlineTool,
@@ -60,24 +60,56 @@ export class CanvasController {
   private doc: PatternDocument | null = null;
   private selection: Selection = { kind: "none" };
   private viewport: ViewportState = createViewport();
-  private activeTool: EditorTool = selectTool;
+  private activeTool: EditorTool = panTool;
   readonly undoStack = new UndoStack();
   private onChange: (() => void) | null = null;
+  private onToolChange: ((toolId: string) => void) | null = null;
   private spacePan = false;
+  private seamPreviewMode = false;
   private resizeObserver: ResizeObserver | null = null;
   private boundKeyDown: (e: KeyboardEvent) => void;
   private boundKeyUp: (e: KeyboardEvent) => void;
   private boundWheel: (e: WheelEvent) => void;
+  private boundDblClick: (e: MouseEvent) => void;
 
   constructor(container: HTMLDivElement) {
     this.container = container;
     this.boundKeyDown = (e) => this.onKeyDown(e);
     this.boundKeyUp = (e) => this.onKeyUp(e);
     this.boundWheel = (e) => this.onWheel(e);
+    this.boundDblClick = (e) => this.onDblClick(e);
   }
 
   setOnChange(fn: () => void): void {
     this.onChange = fn;
+  }
+
+  setOnToolChange(fn: (toolId: string) => void): void {
+    this.onToolChange = fn;
+  }
+
+  getActiveToolId(): string {
+    return this.activeTool.id;
+  }
+
+  isSeamPreviewMode(): boolean {
+    return this.seamPreviewMode;
+  }
+
+  setSeamPreviewMode(enabled: boolean): void {
+    if (this.seamPreviewMode === enabled) return;
+    this.seamPreviewMode = enabled;
+    if (enabled) {
+      this.selection = { kind: "none" };
+      if (this.activeTool.onDeactivate && this.doc) {
+        this.activeTool.onDeactivate(this.toolContext());
+      }
+      this.activeTool = panTool;
+      if (this.svg) this.svg.style.cursor = "grab";
+    } else {
+      this.setActiveTool("pan");
+    }
+    this.redraw();
   }
 
   private containerSize(): { width: number; height: number } {
@@ -134,6 +166,7 @@ export class CanvasController {
     svg.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     svg.addEventListener("pointermove", (e) => this.onPointerMove(e));
     svg.addEventListener("pointerup", (e) => this.onPointerUp(e));
+    svg.addEventListener("dblclick", this.boundDblClick);
     window.addEventListener("keydown", this.boundKeyDown);
     window.addEventListener("keyup", this.boundKeyUp);
 
@@ -153,6 +186,7 @@ export class CanvasController {
       this.redraw();
     };
     requestAnimationFrame(() => requestAnimationFrame(fitOnce));
+    if (this.svg) this.svg.style.cursor = "grab";
   }
 
   unmount(): void {
@@ -163,6 +197,7 @@ export class CanvasController {
     this.container.removeEventListener("wheel", this.boundWheel, { capture: true });
     this.container.classList.remove("editor-active");
     if (this.svg) {
+      this.svg.removeEventListener("dblclick", this.boundDblClick);
       this.svg.replaceWith(document.createComment("editor-unmounted"));
     }
     this.svg = null;
@@ -187,6 +222,7 @@ export class CanvasController {
   }
 
   setActiveTool(toolId: string): void {
+    if (this.seamPreviewMode && toolId !== "pan") return;
     const tool = TOOLS[toolId];
     if (!tool) return;
     if (this.activeTool.onDeactivate && this.doc) {
@@ -198,8 +234,9 @@ export class CanvasController {
     }
     if (this.svg) {
       this.svg.style.cursor =
-        toolId === "pan" ? "grab" : toolId === "add-node" ? "crosshair" : "default";
+        toolId === "pan" ? "grab" : "default";
     }
+    this.onToolChange?.(toolId);
   }
 
   undo(): void {
@@ -256,6 +293,20 @@ export class CanvasController {
 
     this.viewportG.setAttribute("transform", viewportTransform(this.viewport));
 
+    if (this.seamPreviewMode) {
+      this.gridG.setAttribute("visibility", "hidden");
+      const draftPieces = documentToDraftPieces(this.doc);
+      const renderOpts = {
+        seamAllowanceCm: this.doc.meta.seamAllowanceCm,
+        pxPerCm: this.doc.meta.pxPerCm ?? DEFAULT_PX_PER_CM,
+      };
+      this.piecesG.innerHTML = draftPieces
+        .map((p) => renderPieceSvg(p, false, renderOpts))
+        .join("\n");
+      return;
+    }
+
+    this.gridG.removeAttribute("visibility");
     const docB = documentBounds(this.doc);
     const visible = visibleWorldBounds(this.viewport, width, height);
     const gridBounds = unionGridBounds(
@@ -300,27 +351,45 @@ export class CanvasController {
     };
   }
 
+  private pointerTool(): EditorTool {
+    if (this.seamPreviewMode || this.spacePan) return panTool;
+    return this.activeTool;
+  }
+
   private onPointerDown(e: PointerEvent): void {
     if (!this.doc) return;
-    const tool = this.spacePan ? panTool : this.activeTool;
-    tool.onPointerDown(e, this.toolContext());
+    this.pointerTool().onPointerDown(e, this.toolContext());
   }
 
   private onPointerMove(e: PointerEvent): void {
     if (!this.doc) return;
-    const tool = this.spacePan ? panTool : this.activeTool;
-    tool.onPointerMove(e, this.toolContext());
+    this.pointerTool().onPointerMove(e, this.toolContext());
   }
 
   private onPointerUp(e: PointerEvent): void {
     if (!this.doc) return;
-    const tool = this.spacePan ? panTool : this.activeTool;
-    tool.onPointerUp(e, this.toolContext());
+    this.pointerTool().onPointerUp(e, this.toolContext());
   }
 
   private onWheel(e: WheelEvent): void {
     if (!this.doc || !this.svg) return;
     handleWheel(e, this.toolContext(), this.svg);
+  }
+
+  private onDblClick(e: MouseEvent): void {
+    if (this.seamPreviewMode || !this.doc || this.isInputFocused()) return;
+    e.preventDefault();
+    const world = this.toolContext().screenToWorld(e.clientX, e.clientY);
+    if (this.activeTool.id === "pan" && !this.spacePan) {
+      const edge = pickEdge(this.doc, world, this.viewport.scale);
+      if (edge) {
+        this.setActiveTool("select");
+      }
+      return;
+    }
+    if (this.activeTool.id === "select") {
+      insertNodeAtPointer(this.toolContext(), e.clientX, e.clientY);
+    }
   }
 
   private onKeyDown(e: KeyboardEvent): void {
@@ -329,6 +398,7 @@ export class CanvasController {
       e.preventDefault();
     }
     if (
+      !this.seamPreviewMode &&
       (e.key === "Delete" || e.key === "Backspace") &&
       !this.isInputFocused() &&
       this.doc

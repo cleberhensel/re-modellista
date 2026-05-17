@@ -1,6 +1,7 @@
 import type { PatternDocument, Point2 } from "../types.js";
 import type { EditablePath } from "../types.js";
-import { getPiece, getPath } from "../document.js";
+import { resolveInsertParam } from "../document.js";
+import { projectOnCubic } from "../geometry/bezier.js";
 
 const NODE_RADIUS_PX = 8;
 
@@ -15,6 +16,13 @@ export interface PickEdgeResult {
   pathId: string;
   edgeIndex: number;
   t: number;
+}
+
+export interface PickHandleResult {
+  pieceId: string;
+  pathId: string;
+  nodeId: string;
+  handle: "in" | "out";
 }
 
 function dist(a: Point2, b: Point2): number {
@@ -33,6 +41,29 @@ function edgeCount(path: EditablePath): number {
 function nodeAt(path: EditablePath, i: number) {
   const n = path.nodes.length;
   return path.nodes[path.closed ? ((i % n) + n) % n : i]!;
+}
+
+function projectEdge(
+  piece: { layout: { x: number; y: number } },
+  path: EditablePath,
+  edgeIndex: number,
+  world: Point2
+): { t: number; dist: number } {
+  const aNode = nodeAt(path, edgeIndex);
+  const bNode = nodeAt(path, edgeIndex + 1);
+  const a = worldNode(piece, aNode);
+  const b = worldNode(piece, bNode);
+  const kind = path.segmentKinds[edgeIndex] ?? "line";
+  if (kind === "cubic" && aNode.handleOut && bNode.handleIn) {
+    return projectOnCubic(
+      a,
+      worldNode(piece, aNode.handleOut),
+      worldNode(piece, bNode.handleIn),
+      b,
+      world
+    );
+  }
+  return projectOnSegment(a, b, world);
 }
 
 function projectOnSegment(a: Point2, b: Point2, p: Point2): { t: number; dist: number } {
@@ -59,6 +90,53 @@ function pointInPolygon(points: Point2[], p: Point2): boolean {
     if (intersect) inside = !inside;
   }
   return inside;
+}
+
+export function pickHandle(
+  doc: PatternDocument,
+  world: Point2,
+  scale: number
+): PickHandleResult | null {
+  const threshold = 10 / scale;
+  let best: { result: PickHandleResult; d: number } | null = null;
+  for (const piece of doc.pieces) {
+    for (const path of piece.paths) {
+      if (path.role !== "cut" && path.role !== "fold") continue;
+      for (const node of path.nodes) {
+        if (node.handleIn) {
+          const w = worldNode(piece, node.handleIn);
+          const d = dist(w, world);
+          if (d <= threshold && (!best || d < best.d)) {
+            best = {
+              d,
+              result: {
+                pieceId: piece.id,
+                pathId: path.id,
+                nodeId: node.id,
+                handle: "in",
+              },
+            };
+          }
+        }
+        if (node.handleOut) {
+          const w = worldNode(piece, node.handleOut);
+          const d = dist(w, world);
+          if (d <= threshold && (!best || d < best.d)) {
+            best = {
+              d,
+              result: {
+                pieceId: piece.id,
+                pathId: path.id,
+                nodeId: node.id,
+                handle: "out",
+              },
+            };
+          }
+        }
+      }
+    }
+  }
+  return best?.result ?? null;
 }
 
 export function pickNode(
@@ -102,9 +180,7 @@ export function pickEdge(
       if (path.role !== "cut" && path.role !== "fold") continue;
       const edges = edgeCount(path);
       for (let i = 0; i < edges; i++) {
-        const a = worldNode(piece, nodeAt(path, i));
-        const b = worldNode(piece, nodeAt(path, i + 1));
-        const { t, dist: d } = projectOnSegment(a, b, world);
+        const { t, dist: d } = projectEdge(piece, path, i, world);
         if (d <= threshold && (!best || d < best.d)) {
           best = {
             d,
@@ -113,6 +189,42 @@ export function pickEdge(
               pathId: path.id,
               edgeIndex: i,
               t,
+            },
+          };
+        }
+      }
+    }
+  }
+  return best?.result ?? null;
+}
+
+export function pickEdgeForInsert(
+  doc: PatternDocument,
+  world: Point2,
+  scale: number
+): PickEdgeResult | null {
+  const threshold = 10 / scale;
+  let best: { result: PickEdgeResult; score: number } | null = null;
+  for (const piece of doc.pieces) {
+    for (const path of piece.paths) {
+      if (path.role !== "cut" && path.role !== "fold") continue;
+      const edges = edgeCount(path);
+      for (let i = 0; i < edges; i++) {
+        const { t: preferredT, dist: d } = projectEdge(piece, path, i, world);
+        if (d > threshold) continue;
+        const resolvedT = resolveInsertParam(path, i, preferredT);
+        if (resolvedT === null) continue;
+        const slide = Math.abs(resolvedT - preferredT);
+        const interiorBias = Math.min(preferredT, 1 - preferredT);
+        const score = d + slide * 0.75 - interiorBias * 0.25;
+        if (!best || score < best.score) {
+          best = {
+            score,
+            result: {
+              pieceId: piece.id,
+              pathId: path.id,
+              edgeIndex: i,
+              t: resolvedT,
             },
           };
         }

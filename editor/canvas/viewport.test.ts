@@ -27,4 +27,13 @@ describe("viewport grid helpers", () => {
     fitToDocument(editorV, doc, 800, 500, { padding: 14, zoomFactor: 1.75 });
     expect(editorV.scale).toBeGreaterThan(defaultV.scale);
   });
+
+  it("contentInsetLeft shifts pan right for sidebar clearance", () => {
+    const doc = createEmptyDocument();
+    const full = createViewport();
+    const inset = createViewport();
+    fitToDocument(full, doc, 800, 500, { padding: 40 });
+    fitToDocument(inset, doc, 800, 500, { padding: 40, contentInsetLeft: 250 });
+    expect(inset.panX).toBeGreaterThan(full.panX);
+  });
 });

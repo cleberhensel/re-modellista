@@ -21,13 +21,10 @@ import type { RenderOptions } from "./render/svg.js";
 import { renderDraftToSvg } from "./render/svg.js";
 import {
   getPatternDocument,
-  hasSavedPatternView,
   initEditor,
-  isEditorEnabled,
   mountEditorCanvas,
   pendingRegenerate,
-  renderSavedPatternPreview,
-  unmountEditorCanvas,
+  syncEditorChrome,
 } from "./app-editor.js";
 import { buildRegenerateKey } from "./editor/regenerate-key.js";
 import { renderDocumentToSvg } from "./editor/export/to-svg.js";
@@ -403,32 +400,10 @@ function render(): void {
   const options = draftOptions();
   const measurements = readMeasurements();
   const result = draft(measurements, options);
-  const formulasEl = document.getElementById("formulas");
-  const contextEl = document.getElementById("context");
   const previewEl = document.getElementById("preview");
-  if (!(formulasEl instanceof HTMLPreElement)) {
-    throw new Error("missing #formulas");
-  }
-  if (!(contextEl instanceof HTMLPreElement)) {
-    throw new Error("missing #context");
-  }
   if (!(previewEl instanceof HTMLDivElement)) {
     throw new Error("missing #preview");
   }
-  const ctx = result.ctx;
-  const formulas =
-    "formulas" in ctx ? ctx.formulas : { product: result.productId };
-  formulasEl.textContent = JSON.stringify(formulas, null, 2);
-  contextEl.textContent = JSON.stringify(
-    {
-      productId: result.productId,
-      activeSlots: result.activeSlots,
-      meta: result.meta,
-      k: "k" in ctx ? ctx.k : undefined,
-    },
-    null,
-    2
-  );
   lastDraftResult = result;
   const viewOptions = renderOptions();
   const regenerateKey = buildRegenerateKey(
@@ -436,23 +411,9 @@ function render(): void {
     measurements,
     options
   );
-  if (isEditorEnabled()) {
-    mountEditorCanvas(result, viewOptions, previewEl, () => {}, false, regenerateKey);
-  } else {
-    unmountEditorCanvas();
-    const saved = getPatternDocument();
-    const savedSvg = renderSavedPatternPreview(viewOptions);
-    const savedMatchesKey =
-      saved?.meta.regenerateKey === regenerateKey;
-    if (saved && hasSavedPatternView(saved) && savedMatchesKey && savedSvg) {
-      previewEl.innerHTML = savedSvg;
-      saved.meta.seamAllowanceCm = viewOptions.seamAllowanceCm ?? saved.meta.seamAllowanceCm;
-      saved.meta.pxPerCm = viewOptions.pxPerCm;
-    } else {
-      previewEl.innerHTML = renderDraftToSvg(result, viewOptions);
-    }
-  }
+  mountEditorCanvas(result, viewOptions, previewEl, () => {}, false, regenerateKey);
   syncExportButtons(result);
+  syncEditorChrome();
   if (result.error) {
     previewEl.insertAdjacentHTML(
       "beforeend",
@@ -562,12 +523,7 @@ function patternSvgForExport(): string | null {
   if (!draftResult) return null;
   const opts = { ...renderOptions(), includePreviewGrid: false };
   const doc = getPatternDocument();
-  if (isEditorEnabled() && doc) {
-    return renderDocumentToSvg(doc, opts);
-  }
-  if (doc && hasSavedPatternView(doc)) {
-    return renderDocumentToSvg(doc, opts);
-  }
+  if (doc) return renderDocumentToSvg(doc, opts);
   return renderDraftToSvg(draftResult, opts);
 }
 
@@ -608,15 +564,13 @@ downloadPdfBtn.addEventListener("click", async () => {
   const draftResult = lastDraftResult;
   if (!draftResult) return;
   downloadPdfBtn.disabled = true;
-  const label = downloadPdfBtn.textContent;
-  downloadPdfBtn.textContent = "A gerar PDF…";
+  downloadPdfBtn.setAttribute("aria-busy", "true");
   try {
     const doc = getPatternDocument();
     const opts = renderOptions();
-    const blob =
-      doc && hasSavedPatternView(doc)
-        ? await exportDocumentToPdf(doc, opts)
-        : await exportDraftToPdf(draftResult, opts);
+    const blob = doc
+      ? await exportDocumentToPdf(doc, opts)
+      : await exportDraftToPdf(draftResult, opts);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -626,8 +580,9 @@ downloadPdfBtn.addEventListener("click", async () => {
   } catch {
     window.alert("Não foi possível gerar o PDF. Gere o molde primeiro.");
   } finally {
-    downloadPdfBtn.textContent = label;
+    downloadPdfBtn.removeAttribute("aria-busy");
     syncExportButtons();
+    syncEditorChrome();
   }
 });
 

@@ -61,10 +61,8 @@ const fullDom = `
   ${measure("bodiceLength", "42", "Corpo")}
   ${measure("designEaseBust", "6", "Folga")}
   ${measure("coatLength", "65", "Casaco")}
-  <input type="checkbox" id="editor-mode-toggle">
-  <button type="button" id="editor-apply-edits" hidden>Aplicar</button>
-  <button type="button" id="editor-reset-edits" hidden>Limpar</button>
-  <div id="editor-toolbar" hidden></div>
+  <button type="button" id="editor-reset-edits" disabled>Limpar</button>
+  <div id="editor-toolbar"></div>
   <dialog id="editor-regenerate-dialog">
     <button type="button" id="editor-regenerate-cancel">Cancelar</button>
     <button type="button" id="editor-regenerate-confirm">Regenerar</button>
@@ -72,14 +70,8 @@ const fullDom = `
   <button id="copy-svg" type="button">SVG</button>
   <button id="download-pdf" type="button">PDF</button>
   <p id="guardrail-hint" hidden></p>
-  <pre id="formulas"></pre>
-  <pre id="context"></pre>
-  <div id="preview"></div>
-`.replace(/<\/?motion/g, (t) => t.replace("motion", "div"));
-
-const slider = (id: string, value: string) =>
-  `<input id="${id}" type="range" value="${value}" step="1">` +
-  `<output id="${id}-out" for="${id}">${value}</output>`;
+  <div id="preview" class="preview editor-active"></div>
+`;
 
 const exportDraftToPdfMock = vi.fn().mockResolvedValue(new Blob(["%PDF"]));
 
@@ -100,7 +92,7 @@ describe("app", () => {
     document.body.innerHTML = fullDom;
     await import("./app.js");
     const preview = document.getElementById("preview") as HTMLDivElement;
-    expect(preview.innerHTML).toContain("<svg");
+    expect(preview.querySelector(".editor-svg")).toBeTruthy();
     expect(document.querySelector('[data-measure="bust"] .measure-head span')?.textContent).toBe(
       "Busto"
     );
@@ -108,10 +100,7 @@ describe("app", () => {
     (document.getElementById("bust") as HTMLInputElement).dispatchEvent(
       new Event("input")
     );
-    expect(preview.innerHTML).toContain("<svg");
-    expect(document.getElementById("formulas")?.textContent).toContain(
-      "bustQuarterCm"
-    );
+    expect(preview.querySelector(".editor-svg")).toBeTruthy();
   });
 
   it("downloads pdf at real scale", async () => {
@@ -209,7 +198,7 @@ describe("app", () => {
     lengthPreset.value = "short";
     lengthPreset.dispatchEvent(new Event("change"));
     expect(preset.value).toBe("custom");
-    expect(document.getElementById("preview")?.innerHTML).toContain("<svg");
+    expect(document.getElementById("preview")?.querySelector(".editor-svg")).toBeTruthy();
   });
 
   it("marca personalizado ao alterar toggle", async () => {
@@ -229,7 +218,7 @@ describe("app", () => {
     expect(preset.value).toBe("custom");
   });
 
-  it("preset camiseta omite colarinho no svg", async () => {
+  it("preset camiseta omite colarinho no canvas", async () => {
     document.body.innerHTML = fullDom;
     await import("./app.js");
     const preset = document.getElementById(
@@ -238,7 +227,7 @@ describe("app", () => {
     preset.value = "tshirt";
     preset.dispatchEvent(new Event("change"));
     const preview = document.getElementById("preview") as HTMLDivElement;
-    expect(preview.innerHTML).toContain("<svg");
+    expect(preview.querySelector(".editor-svg")).toBeTruthy();
     expect(preview.innerHTML).not.toContain("collar-stand");
     expect(preview.innerHTML).not.toContain("collar-fall");
   });
@@ -253,15 +242,7 @@ describe("app", () => {
     product.dispatchEvent(new Event("change"));
     product.value = "bermuda";
     product.dispatchEvent(new Event("change"));
-    expect(document.getElementById("preview")?.innerHTML).toContain("<svg");
-  });
-
-  it("exposes product id in context panel", async () => {
-    document.body.innerHTML = fullDom;
-    await import("./app.js");
-    expect(document.getElementById("context")?.textContent).toContain(
-      '"productId": "blusa"'
-    );
+    expect(document.getElementById("preview")?.querySelector(".editor-svg")).toBeTruthy();
   });
 
   it("throws when product select is missing", async () => {
@@ -296,24 +277,19 @@ describe("app", () => {
     await expect(import("./app.js")).rejects.toThrow("missing #download-pdf");
   });
 
-  it("throws when formulas panel is missing", async () => {
+  it("throws when copy svg button is missing", async () => {
     document.body.innerHTML = fullDom.replace(
-      '<pre id="formulas"></pre>\n  ',
+      '<button id="copy-svg" type="button">SVG</button>\n  ',
       ""
     );
-    await expect(import("./app.js")).rejects.toThrow("missing #formulas");
-  });
-
-  it("throws when context panel is missing", async () => {
-    document.body.innerHTML = fullDom.replace(
-      '<pre id="context"></pre>\n  ',
-      ""
-    );
-    await expect(import("./app.js")).rejects.toThrow("missing #context");
+    await expect(import("./app.js")).rejects.toThrow("missing #copy-svg");
   });
 
   it("throws when preview panel is missing", async () => {
-    document.body.innerHTML = fullDom.replace('<div id="preview"></div>\n', "");
+    document.body.innerHTML = fullDom.replace(
+      '<div id="preview" class="preview editor-active"></div>\n',
+      ""
+    );
     await expect(import("./app.js")).rejects.toThrow("missing #preview");
   });
 });

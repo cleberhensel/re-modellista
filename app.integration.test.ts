@@ -12,13 +12,13 @@ function buildDom(hintTag = "p"): string {
     <option value="casaco">Casaco</option>
     <option value="cos">Cos</option>
   </select>
-  <motion class="measure" data-measure="bust">${slider("bust", "92")}</motion>
+  <div class="measure" data-measure="bust">${slider("bust", "92")}</div>
   <div class="measure" data-measure="height">${slider("height", "45")}</div>
   <div class="measure" data-measure="waist">${slider("waist", "81")}</div>
   <div class="measure" data-measure="wrist">${slider("wrist", "12")}</div>
   <div class="measure" data-measure="sleeve">${slider("sleeve", "27")}</div>
   <div class="measure hidden" data-measure="hip">${slider("hip", "96")}</div>
-  <div class="measure hidden" data-measure="hipDepth">${slider("hipDepth", "20")}</motion>
+  <div class="measure hidden" data-measure="hipDepth">${slider("hipDepth", "20")}</div>
   <div class="measure hidden" data-measure="skirtLength">${slider("skirtLength", "60")}</div>
   <div class="measure hidden" data-measure="crotchDepth">${slider("crotchDepth", "26")}</div>
   <div class="measure hidden" data-measure="inseam">${slider("inseam", "78")}</div>
@@ -26,18 +26,15 @@ function buildDom(hintTag = "p"): string {
   <div class="measure hidden" data-measure="designEaseBust">${slider("designEaseBust", "6")}</div>
   <div class="measure hidden" data-measure="coatLength">${slider("coatLength", "65")}</div>
   <${hintTag} id="guardrail-hint" hidden></${hintTag}>
-  <input type="checkbox" id="editor-mode-toggle">
-  <button type="button" id="editor-apply-edits" hidden>Aplicar</button>
-  <button type="button" id="editor-reset-edits" hidden>Limpar</button>
-  <motion id="editor-toolbar" hidden></div>
+  <button type="button" id="editor-reset-edits" disabled>Limpar</button>
+  <div id="editor-toolbar"></div>
   <dialog id="editor-regenerate-dialog">
     <button type="button" id="editor-regenerate-cancel">Cancelar</button>
     <button type="button" id="editor-regenerate-confirm">Regenerar</button>
   </dialog>
+  <button id="copy-svg" type="button">SVG</button>
   <button id="download-pdf" type="button">PDF</button>
-  <pre id="formulas"></pre>
-  <pre id="context"></pre>
-  <motion id="preview"></motion>
+  <div id="preview" class="preview editor-active"></div>
 `.replace(/<\/?motion/g, (t) => t.replace("motion", "div"));
 }
 
@@ -58,7 +55,7 @@ describe("app integration", () => {
     (document.getElementById("designEaseBust") as HTMLInputElement).dispatchEvent(
       new Event("input")
     );
-    expect(document.getElementById("preview")?.innerHTML).toContain("<svg");
+    expect(document.getElementById("preview")?.querySelector(".editor-svg")).toBeTruthy();
   });
 
   it("switches to cos product", async () => {
@@ -87,7 +84,7 @@ describe("app integration", () => {
   });
 
   it("skips hint when element is not paragraph", async () => {
-    document.body.innerHTML = buildDom("motion");
+    document.body.innerHTML = buildDom("div");
     vi.resetModules();
     await import("./app.js");
     expect(document.getElementById("guardrail-hint")).toBeTruthy();

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { draft } from "../engine/index.js";
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
 import { lineSegment, point } from "../engine/geometry.js";
+import * as pdfTileModule from "./pdf-tile.js";
 import * as svgModule from "./svg.js";
 import {
   exportDraftToPdf,
@@ -41,7 +42,7 @@ describe("printPageSize", () => {
 });
 
 describe("exportDraftToPdf", () => {
-  it("builds one pdf page per piece at real scale", async () => {
+  it("builds tiled A4 pdf with instructions and piece pages", async () => {
     const result = draft(
       { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
       { productId: "blusa" }
@@ -50,7 +51,7 @@ describe("exportDraftToPdf", () => {
     expect(blob.type).toBe("application/pdf");
     expect(svg2pdfMock).toHaveBeenCalled();
     expect(outputMock).toHaveBeenCalledWith("blob");
-    expect(addPageMock.mock.calls.length).toBe(result.pieces.length - 1);
+    expect(addPageMock.mock.calls.length).toBeGreaterThan(result.pieces.length);
   });
 
   it("throws when there are no drawable pieces", async () => {
@@ -68,7 +69,7 @@ describe("exportDraftToPdf", () => {
   });
 
   it("names download file from product id", () => {
-    expect(pdfFilename("camisa")).toBe("camisa-molde.pdf");
+    expect(pdfFilename("camisa")).toBe("camisa-molde-a4.pdf");
   });
 
   it("throws when every piece has zero bounds", async () => {
@@ -84,8 +85,7 @@ describe("exportDraftToPdf", () => {
     ).rejects.toThrow("no_pieces");
   });
 
-  it("uses landscape orientation for wide pieces", async () => {
-    const { jsPDF } = await import("jspdf");
+  it("adds landscape tile pages for wide pieces", async () => {
     const base = draft(
       { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
       { productId: "blusa" }
@@ -96,17 +96,18 @@ describe("exportDraftToPdf", () => {
         {
           id: "wide",
           paths: [
-            lineSegment(point(0, 0), point(400, 0)),
-            lineSegment(point(400, 0), point(400, 40)),
-            lineSegment(point(400, 40), point(0, 40)),
-            lineSegment(point(0, 40), point(0, 0)),
+            lineSegment(point(0, 0), point(650, 0)),
+            lineSegment(point(650, 0), point(650, 80)),
+            lineSegment(point(650, 80), point(0, 80)),
+            lineSegment(point(0, 80), point(0, 0)),
           ],
         },
       ],
     });
-    expect(jsPDF).toHaveBeenCalledWith(
-      expect.objectContaining({ orientation: "landscape" })
+    const landscapePages = addPageMock.mock.calls.filter(
+      (call) => call[1] === "landscape"
     );
+    expect(landscapePages.length).toBeGreaterThan(0);
   });
 
   it("skips seam padding when allowance is zero", async () => {
@@ -123,7 +124,7 @@ describe("exportDraftToPdf", () => {
       { bust: 92, height: 45, waist: 81, wrist: 12, sleeveLength: 27 },
       { productId: "blusa" }
     );
-    vi.spyOn(svgModule, "renderPieceToPrintSvg").mockReturnValue(
+    vi.spyOn(pdfTileModule, "renderTilePageSvg").mockReturnValue(
       "<html></html>"
     );
     await expect(exportDraftToPdf(base)).rejects.toThrow("invalid_svg");

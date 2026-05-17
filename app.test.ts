@@ -85,7 +85,7 @@ const exportDraftToPdfMock = vi.fn().mockResolvedValue(new Blob(["%PDF"]));
 vi.mock("./render/pdf.js", () => ({
   exportDraftToPdf: (...args: unknown[]) => exportDraftToPdfMock(...args),
   exportDocumentToPdf: (...args: unknown[]) => exportDraftToPdfMock(...args),
-  pdfFilename: (id: string) => `${id}-molde.pdf`,
+  pdfFilename: (id: string) => `${id}-molde-a4.pdf`,
 }));
 
 afterEach(() => {

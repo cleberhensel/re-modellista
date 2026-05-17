@@ -67,10 +67,7 @@ export function draftBlouseBack(ctx: DraftContext): PatternPiece {
     lineSegment(sideBottom, cfHem),
   ];
 
-  const construction: PathSegment[] = [
-    lineSegment(cfNeck, cfHem, true),
-    lineSegment(shoulderStart, shoulderEnd, true),
-  ];
+  const construction: PathSegment[] = [lineSegment(cfNeck, cfHem, true)];
 
   if (!ctx.draftOptions.suppressDarts) {
     construction.push(

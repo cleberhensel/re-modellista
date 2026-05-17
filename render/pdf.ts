@@ -1,12 +1,24 @@
 import { jsPDF } from "jspdf";
 import { svg2pdf } from "svg2pdf.js";
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
-import type { DraftResult } from "../engine/types.js";
+import type { DraftResult, PatternPiece } from "../engine/types.js";
 import type { PatternDocument } from "../editor/types.js";
 import { documentToDraftPieces } from "../editor/adapters/from-draft.js";
 import { pieceBounds, translatePiece, type PieceBounds } from "./layout.js";
 import { seamAllowancePaddingPx } from "./seam-allowance.js";
-import { renderPieceToPrintSvg, type RenderOptions } from "./svg.js";
+import {
+  a4PageSize,
+  A4_HEIGHT_PT,
+  A4_WIDTH_PT,
+  computeTilePlan,
+  mmToPt,
+  pickA4Orientation,
+  renderInstructionsPageSvg,
+  renderPieceCoverSvg,
+  renderTilePageSvg,
+  type TilePlan,
+} from "./pdf-tile.js";
+import { pieceLabel, renderPieceSvg, type RenderOptions } from "./svg.js";
 
 const PAGE_MARGIN_PT = DEFAULT_PX_PER_CM;
 
@@ -14,6 +26,10 @@ export interface PrintPageSize {
   width: number;
   height: number;
   marginPt: number;
+}
+
+export interface PdfExportOptions extends RenderOptions {
+  tileA4?: boolean;
 }
 
 export function printPageSize(
@@ -55,16 +71,114 @@ function expandBoundsForSeamAllowance(
   };
 }
 
+async function appendSvgPage(
+  doc: jsPDF,
+  svg: string,
+  pageWidth: number,
+  pageHeight: number
+): Promise<void> {
+  const orientation = pageOrientation(pageWidth, pageHeight);
+  doc.addPage([pageWidth, pageHeight], orientation);
+  const el = svgElementFromString(svg);
+  await svg2pdf(el, doc, {
+    x: 0,
+    y: 0,
+    width: pageWidth,
+    height: pageHeight,
+  });
+}
+
+async function exportPieceLegacyPage(
+  doc: jsPDF,
+  piece: PatternPiece,
+  bounds: PieceBounds,
+  options: RenderOptions
+): Promise<void> {
+  const page = printPageSize(bounds);
+  const placed = translatePiece(
+    piece,
+    page.marginPt - bounds.minX,
+    page.marginPt - bounds.minY
+  );
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${page.width}" height="${page.height}" viewBox="0 0 ${page.width} ${page.height}">${renderPieceSvg(placed, true, options)}</svg>`;
+  await appendSvgPage(doc, svg, page.width, page.height);
+}
+
+async function exportPieceTiledA4(
+  doc: jsPDF,
+  piece: PatternPiece,
+  bounds: PieceBounds,
+  options: RenderOptions
+): Promise<void> {
+  const marginPt = mmToPt(12);
+  const title = pieceLabel(piece.id);
+  const body = renderPieceSvg(piece, true, options);
+  const orientation = pickA4Orientation(bounds, marginPt);
+  const { width: pageWidth, height: pageHeight } = a4PageSize(orientation);
+  const plan = computeTilePlan({
+    bounds,
+    marginPt,
+    pageWidth,
+    pageHeight,
+  });
+
+  if (plan.tiles.length > 1) {
+    const coverSvg = renderPieceCoverSvg(pageWidth, pageHeight, title, plan);
+    await appendSvgPage(doc, coverSvg, pageWidth, pageHeight);
+  }
+
+  for (const tile of plan.tiles) {
+    const footer = `${title} — ${tile.label} (${tile.index}/${tile.total}) — escala 100%`;
+    const tileSvg = renderTilePageSvg(
+      body,
+      pageWidth,
+      pageHeight,
+      plan.marginPt,
+      plan.printableW,
+      plan.printableH,
+      tile.originX,
+      tile.originY,
+      footer,
+      plan.overlapPt
+    );
+    await appendSvgPage(doc, tileSvg, pageWidth, pageHeight);
+  }
+}
+
 export async function exportDraftToPdf(
   result: DraftResult,
-  options: RenderOptions = {}
+  options: PdfExportOptions = {}
 ): Promise<Blob> {
   const drawable = result.pieces.filter((p) => p.paths.length > 0);
   if (drawable.length === 0) {
     throw new Error("no_pieces");
   }
 
-  let doc: jsPDF | null = null;
+  const pxPerCm = options.pxPerCm ?? DEFAULT_PX_PER_CM;
+  const instructionsSvg = renderInstructionsPageSvg(
+    A4_WIDTH_PT,
+    A4_HEIGHT_PT,
+    result.productId,
+    pxPerCm
+  );
+
+  const doc = new jsPDF({
+    unit: "pt",
+    format: [A4_WIDTH_PT, A4_HEIGHT_PT],
+    orientation: "portrait",
+    compress: true,
+  });
+
+  const el = svgElementFromString(instructionsSvg);
+  await svg2pdf(el, doc, {
+    x: 0,
+    y: 0,
+    width: A4_WIDTH_PT,
+    height: A4_HEIGHT_PT,
+  });
+
+  const useTiling = options.tileA4 !== false;
+  let exportedPieces = 0;
 
   for (const piece of drawable) {
     const rawBounds = pieceBounds(piece);
@@ -76,39 +190,15 @@ export async function exportDraftToPdf(
       options.pxPerCm
     );
     const bounds = expandBoundsForSeamAllowance(rawBounds, paddingPx);
-    const page = printPageSize(bounds);
-    const orientation = pageOrientation(page.width, page.height);
-    if (!doc) {
-      doc = new jsPDF({
-        unit: "pt",
-        format: [page.width, page.height],
-        orientation,
-        compress: true,
-      });
+    if (useTiling) {
+      await exportPieceTiledA4(doc, piece, bounds, options);
     } else {
-      doc.addPage([page.width, page.height], orientation);
+      await exportPieceLegacyPage(doc, piece, bounds, options);
     }
-    const placed = translatePiece(
-      piece,
-      page.marginPt - bounds.minX,
-      page.marginPt - bounds.minY
-    );
-    const svg = renderPieceToPrintSvg(
-      placed,
-      page.width,
-      page.height,
-      options
-    );
-    const el = svgElementFromString(svg);
-    await svg2pdf(el, doc, {
-      x: 0,
-      y: 0,
-      width: page.width,
-      height: page.height,
-    });
+    exportedPieces += 1;
   }
 
-  if (!doc) {
+  if (exportedPieces === 0) {
     throw new Error("no_pieces");
   }
 
@@ -117,7 +207,7 @@ export async function exportDraftToPdf(
 
 export async function exportDocumentToPdf(
   doc: PatternDocument,
-  options: RenderOptions = {}
+  options: PdfExportOptions = {}
 ): Promise<Blob> {
   const pieces = documentToDraftPieces(doc);
   const fakeDraft: DraftResult = {
@@ -134,5 +224,7 @@ export async function exportDocumentToPdf(
 }
 
 export function pdfFilename(productId: string): string {
-  return `${productId}-molde.pdf`;
+  return `${productId}-molde-a4.pdf`;
 }
+
+export { fitsSingleA4Sheet, computeTilePlan, type TilePlan } from "./pdf-tile.js";

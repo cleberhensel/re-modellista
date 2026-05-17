@@ -52,7 +52,7 @@ export function pieceToSvgPath(piece: PatternPiece): string {
   return segmentsToPathD(piece.paths.filter((s) => !isDashed(s)));
 }
 
-function pieceLabel(id: string): string {
+export function pieceLabel(id: string): string {
   const labels: Record<string, string> = {
     "blouse-front": "Frente",
     "blouse-back": "Costas",
@@ -71,7 +71,7 @@ function pieceLabel(id: string): string {
   return labels[id] ?? id;
 }
 
-function renderPieceSvg(
+export function renderPieceSvg(
   piece: PatternPiece,
   forPrint = false,
   options: RenderOptions = {}

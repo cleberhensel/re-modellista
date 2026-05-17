@@ -8,6 +8,7 @@ import {
   mmToPt,
   pickA4Orientation,
   printableArea,
+  renderInstructionsPageSvg,
   TEST_SQUARE_CM,
   tileLabel,
 } from "./pdf-tile.js";
@@ -80,6 +81,16 @@ describe("pdf-tile", () => {
         height: height * 0.8,
       })
     ).toBe(true);
+  });
+
+  it("places calibration square below instructions text", () => {
+    const svg = renderInstructionsPageSvg(A4_WIDTH_PT, A4_HEIGHT_PT, "blusa");
+    expect(svg).toContain("Quadrado de calibração");
+    expect(svg).toContain("Produto: Blusa");
+    const textEnd = svg.indexOf("4. Colar");
+    const square = svg.indexOf('fill="#fafafa"');
+    expect(textEnd).toBeGreaterThan(0);
+    expect(square).toBeGreaterThan(textEnd);
   });
 
   it("picks landscape when piece is wide", () => {

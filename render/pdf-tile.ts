@@ -213,6 +213,16 @@ export function renderTestSquareSvg(
   );
 }
 
+function productDisplayName(productId: string): string {
+  const names: Record<string, string> = {
+    blusa: "Blusa",
+    "saia-reta": "Saia reta",
+    casaco: "Casaco",
+    cos: "Cós",
+  };
+  return names[productId] ?? productId;
+}
+
 export function renderInstructionsPageSvg(
   pageWidth: number,
   pageHeight: number,
@@ -220,27 +230,44 @@ export function renderInstructionsPageSvg(
   pxPerCm = DEFAULT_PX_PER_CM
 ): string {
   const side = cmToPt(TEST_SQUARE_CM, pxPerCm);
-  const sqX = pageWidth - side - mmToPt(20);
-  const sqY = mmToPt(28);
-  const lines = [
-    "Remodellista — impressão A4 em tamanho real",
-    `Produto: ${productId}`,
-    "",
-    "1. Imprimir em escala 100% (tamanho real). Não usar «ajustar à página».",
-    "2. Medir o quadrado de teste abaixo. Deve medir exatamente 5 cm.",
-    "3. Recortar ou sobrepor folhas pelas marcas de registo e linhas do molde.",
-    "4. Colar com fita nas áreas de sobreposição (~1 cm entre folhas).",
-  ];
-  const text = lines
-    .map(
-      (line, i) =>
-        `<text x="${mmToPt(18).toFixed(2)}" y="${(mmToPt(22) + i * 14).toFixed(2)}" font-size="11" font-family="system-ui,sans-serif" fill="#000">${escapeXml(line)}</text>`
-    )
-    .join("");
+  const marginX = mmToPt(20);
+  const lineH = mmToPt(5.5);
+  let y = mmToPt(24);
+
+  const parts: string[] = [];
+  const textLine = (content: string, size: number, bold = false) => {
+    const weight = bold ? ' font-weight="600"' : "";
+    parts.push(
+      `<text x="${marginX.toFixed(2)}" y="${y.toFixed(2)}" font-size="${size}"${weight} font-family="system-ui,sans-serif" fill="#111">${escapeXml(content)}</text>`
+    );
+    y += lineH;
+  };
+
+  textLine("Remodellista — impressão A4 em tamanho real", 13, true);
+  textLine(`Produto: ${productDisplayName(productId)}`, 10);
+  y += mmToPt(3);
+  textLine("1. Imprimir em escala 100% (tamanho real). Não usar «ajustar à página».", 10);
+  textLine("2. Medir o quadrado de calibração abaixo — deve medir exatamente 5 cm.", 10);
+  textLine("3. Recortar ou sobrepor folhas pelas marcas de registo e linhas do molde.", 10);
+  textLine("4. Colar com fita nas áreas de sobreposição (~1 cm entre folhas).", 10);
+
+  const sqY = y + mmToPt(8);
+  const sqX = (pageWidth - side) / 2;
+  const labelY = sqY - mmToPt(4);
+  const dimLabel = `${TEST_SQUARE_CM} cm`;
+
+  parts.push(
+    `<text x="${(pageWidth / 2).toFixed(2)}" y="${labelY.toFixed(2)}" text-anchor="middle" font-size="10" font-family="system-ui,sans-serif" fill="#111">Quadrado de calibração</text>`,
+    `<rect x="${sqX.toFixed(2)}" y="${sqY.toFixed(2)}" width="${side.toFixed(2)}" height="${side.toFixed(2)}" fill="#fafafa" stroke="#000" stroke-width="1.2"/>`,
+    `<text x="${(sqX + side / 2).toFixed(2)}" y="${(sqY + side + mmToPt(5)).toFixed(2)}" text-anchor="middle" font-size="9" font-family="system-ui,sans-serif" fill="#111">${dimLabel}</text>`,
+    `<text x="${(sqX - mmToPt(5)).toFixed(2)}" y="${(sqY + side / 2 + 3).toFixed(2)}" text-anchor="end" font-size="9" font-family="system-ui,sans-serif" fill="#111" transform="rotate(-90 ${(sqX - mmToPt(5)).toFixed(2)} ${(sqY + side / 2).toFixed(2)})">${dimLabel}</text>`,
+    `<text x="${marginX.toFixed(2)}" y="${(pageHeight - mmToPt(12)).toFixed(2)}" font-size="8" font-family="system-ui,sans-serif" fill="#666">Página 1 · Calibração · escala 100%</text>`
+  );
+
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">` +
-    text +
-    `<rect x="${sqX.toFixed(2)}" y="${sqY.toFixed(2)}" width="${side.toFixed(2)}" height="${side.toFixed(2)}" fill="none" stroke="#000" stroke-width="1.2"/>` +
+    `<rect width="100%" height="100%" fill="#fff"/>` +
+    parts.join("") +
     `</svg>`
   );
 }

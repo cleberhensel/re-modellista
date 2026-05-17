@@ -2,6 +2,8 @@ import { jsPDF } from "jspdf";
 import { svg2pdf } from "svg2pdf.js";
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
 import type { DraftResult } from "../engine/types.js";
+import type { PatternDocument } from "../editor/types.js";
+import { documentToDraftPieces } from "../editor/adapters/from-draft.js";
 import { pieceBounds, translatePiece, type PieceBounds } from "./layout.js";
 import { seamAllowancePaddingPx } from "./seam-allowance.js";
 import { renderPieceToPrintSvg, type RenderOptions } from "./svg.js";
@@ -111,6 +113,24 @@ export async function exportDraftToPdf(
   }
 
   return doc.output("blob");
+}
+
+export async function exportDocumentToPdf(
+  doc: PatternDocument,
+  options: RenderOptions = {}
+): Promise<Blob> {
+  const pieces = documentToDraftPieces(doc);
+  const fakeDraft: DraftResult = {
+    productId: doc.meta.productId,
+    ctx: { measurements: { bust: 90, height: 60, waist: 70, wrist: 16, sleeveLength: 58 }, draftOptions: {}, k: 1, margin: 0, start: 0, startOne: 0, startTwo: 0, widthPx: 0, heightPx: 0, hipPx: 0, seventh: { one: 0, two: 0, three: 0, four: 0, five: 0, six: 0, seven: 0 }, s: { one: 0, two: 0, three: 0, four: 0, five: 0, six: 0, seven: 0 }, formulas: { bustQuarterCm: 0, bustHalfCm: 0, seventhOneCm: 0, seventhTwoCm: 0, seventhFourCm: 0, widthPx: 0, heightPx: 0, hipPx: 0, shoulderY: 0, armholeLineY: 0 } },
+    pieces,
+    bounds: { width: 400, height: 400 },
+  };
+  return exportDraftToPdf(fakeDraft, {
+    ...options,
+    seamAllowanceCm: options.seamAllowanceCm ?? doc.meta.seamAllowanceCm,
+    pxPerCm: options.pxPerCm ?? doc.meta.pxPerCm,
+  });
 }
 
 export function pdfFilename(productId: string): string {

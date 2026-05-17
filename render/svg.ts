@@ -1,6 +1,6 @@
 import { DEFAULT_PX_PER_CM } from "../engine/constants.js";
 import type { DraftResult, PathSegment, PatternPiece, Point2 } from "../engine/types.js";
-import { layoutPieces } from "./layout.js";
+import { layoutPieces, pieceBounds } from "./layout.js";
 import { CUT_MARKER_VIEW_OUTSET_PX, cutMarkersSvg } from "./cut-markers.js";
 import {
   DEFAULT_SEAM_ALLOWANCE_CM,
@@ -138,6 +138,34 @@ export function renderPieceToPrintSvg(
 ): string {
   const body = renderPieceSvg(piece, true, options);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">${body}</svg>`;
+}
+
+export function renderPositionedPiecesToSvg(
+  pieces: PatternPiece[],
+  options: RenderOptions = {}
+): string {
+  const drawable = pieces.filter((p) => p.paths.length > 0);
+  let maxX = CUT_MARKER_VIEW_OUTSET_PX;
+  let maxY = CUT_MARKER_VIEW_OUTSET_PX;
+  for (const piece of drawable) {
+    const b = pieceBounds(piece);
+    const pad =
+      (options.seamAllowanceCm ?? DEFAULT_SEAM_ALLOWANCE_CM) *
+      (options.pxPerCm ?? DEFAULT_PX_PER_CM);
+    if (b.maxX + pad > maxX) maxX = b.maxX + pad;
+    if (b.maxY + pad > maxY) maxY = b.maxY + pad;
+  }
+  const bounds = {
+    width: Math.ceil(Math.max(maxX, 400)),
+    height: Math.ceil(Math.max(maxY, 400)),
+  };
+  const body = drawable
+    .map((piece) => renderPieceSvg(piece, false, options))
+    .join("\n");
+  const pad = CUT_MARKER_VIEW_OUTSET_PX;
+  const w = bounds.width + pad;
+  const h = bounds.height + pad;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${body}</svg>`;
 }
 
 export function renderDraftToSvg(

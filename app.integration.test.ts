@@ -26,6 +26,14 @@ function buildDom(hintTag = "p"): string {
   <div class="measure hidden" data-measure="designEaseBust">${slider("designEaseBust", "6")}</div>
   <div class="measure hidden" data-measure="coatLength">${slider("coatLength", "65")}</div>
   <${hintTag} id="guardrail-hint" hidden></${hintTag}>
+  <input type="checkbox" id="editor-mode-toggle">
+  <button type="button" id="editor-apply-edits" hidden>Aplicar</button>
+  <button type="button" id="editor-reset-edits" hidden>Limpar</button>
+  <motion id="editor-toolbar" hidden></div>
+  <dialog id="editor-regenerate-dialog">
+    <button type="button" id="editor-regenerate-cancel">Cancelar</button>
+    <button type="button" id="editor-regenerate-confirm">Regenerar</button>
+  </dialog>
   <button id="download-pdf" type="button">PDF</button>
   <pre id="formulas"></pre>
   <pre id="context"></pre>

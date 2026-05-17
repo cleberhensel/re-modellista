@@ -61,6 +61,14 @@ const fullDom = `
   ${measure("bodiceLength", "42", "Corpo")}
   ${measure("designEaseBust", "6", "Folga")}
   ${measure("coatLength", "65", "Casaco")}
+  <input type="checkbox" id="editor-mode-toggle">
+  <button type="button" id="editor-apply-edits" hidden>Aplicar</button>
+  <button type="button" id="editor-reset-edits" hidden>Limpar</button>
+  <div id="editor-toolbar" hidden></div>
+  <dialog id="editor-regenerate-dialog">
+    <button type="button" id="editor-regenerate-cancel">Cancelar</button>
+    <button type="button" id="editor-regenerate-confirm">Regenerar</button>
+  </dialog>
   <button id="download-pdf" type="button">PDF</button>
   <p id="guardrail-hint" hidden></p>
   <pre id="formulas"></pre>
@@ -76,6 +84,7 @@ const exportDraftToPdfMock = vi.fn().mockResolvedValue(new Blob(["%PDF"]));
 
 vi.mock("./render/pdf.js", () => ({
   exportDraftToPdf: (...args: unknown[]) => exportDraftToPdfMock(...args),
+  exportDocumentToPdf: (...args: unknown[]) => exportDraftToPdfMock(...args),
   pdfFilename: (id: string) => `${id}-molde.pdf`,
 }));
 

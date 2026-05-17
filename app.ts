@@ -12,9 +12,21 @@ import {
   listCatalogGroups,
   type ProductId,
 } from "./catalog/products.js";
-import { exportDraftToPdf, pdfFilename } from "./render/pdf.js";
+import {
+  exportDocumentToPdf,
+  exportDraftToPdf,
+  pdfFilename,
+} from "./render/pdf.js";
 import type { RenderOptions } from "./render/svg.js";
 import { renderDraftToSvg } from "./render/svg.js";
+import {
+  getPatternDocument,
+  initEditor,
+  isEditorEnabled,
+  mountEditorCanvas,
+  pendingRegenerate,
+  unmountEditorCanvas,
+} from "./app-editor.js";
 
 const SLIDER_DOM: Record<string, string> = {
   bust: "bust",
@@ -413,8 +425,13 @@ function render(): void {
     null,
     2
   );
-  previewEl.innerHTML = renderDraftToSvg(result, renderOptions());
   lastDraftResult = result;
+  if (isEditorEnabled()) {
+    mountEditorCanvas(result, renderOptions(), previewEl, () => {});
+  } else {
+    unmountEditorCanvas();
+    previewEl.innerHTML = renderDraftToSvg(result, renderOptions());
+  }
   const downloadBtn = document.getElementById("download-pdf");
   if (downloadBtn instanceof HTMLButtonElement) {
     const hasPieces = result.pieces.some((p) => p.paths.length > 0);
@@ -440,8 +457,16 @@ function onSliderInput(domId: string): void {
   const product = getProduct(currentProductId)!;
   const key = product.measureKeys.find((k) => (SLIDER_DOM[k] ?? k) === domId);
   if (!key) return;
+  const slider = sliderEl(domId);
+  const previous = slider.value;
   applyMeasurements(readMeasurements(), key, draftOptions());
-  render();
+  pendingRegenerate(
+    () => render(),
+    () => {
+      slider.value = previous;
+      applyMeasurements(readMeasurements(), key, draftOptions());
+    }
+  );
 }
 
 function initSliders(): void {
@@ -465,21 +490,33 @@ function initComposition(): void {
     input.addEventListener("change", () => {
       markCompositionCustom();
       syncCompositionVisibility();
-      render();
+      pendingRegenerate(() => render());
     });
   }
   const presetSelect = compositionPresetSelect();
   if (presetSelect) {
+    let lastPresetValue = presetSelect.value;
+    presetSelect.addEventListener("focus", () => {
+      lastPresetValue = presetSelect.value;
+    });
     presetSelect.addEventListener("change", () => {
-      applyCompositionPresetById(presetSelect.value);
-      render();
+      const newVal = presetSelect.value;
+      applyCompositionPresetById(newVal);
+      pendingRegenerate(
+        () => render(),
+        () => {
+          presetSelect.value = lastPresetValue;
+          applyCompositionPresetById(lastPresetValue);
+        }
+      );
+      lastPresetValue = newVal;
     });
   }
   const lengthPreset = document.getElementById("sleeve-length-preset");
   if (lengthPreset instanceof HTMLSelectElement) {
     lengthPreset.addEventListener("change", () => {
       markCompositionCustom();
-      render();
+      pendingRegenerate(() => render());
     });
   }
 }
@@ -487,9 +524,21 @@ function initComposition(): void {
 syncProductSelect();
 initSliders();
 initComposition();
+let lastProductId: ProductId = currentProductId;
+productSelect().addEventListener("focus", () => {
+  lastProductId = currentProductId;
+});
 productSelect().addEventListener("change", () => {
-  applyProduct(productSelect().value as ProductId);
-  render();
+  const newId = productSelect().value as ProductId;
+  applyProduct(newId);
+  pendingRegenerate(
+    () => render(),
+    () => {
+      productSelect().value = lastProductId;
+      applyProduct(lastProductId);
+    }
+  );
+  lastProductId = newId;
 });
 
 const downloadPdfBtn = document.getElementById("download-pdf");
@@ -504,7 +553,11 @@ downloadPdfBtn.addEventListener("click", async () => {
   const label = downloadPdfBtn.textContent;
   downloadPdfBtn.textContent = "A gerar PDF…";
   try {
-    const blob = await exportDraftToPdf(draftResult, renderOptions());
+    const doc = getPatternDocument();
+    const blob =
+      isEditorEnabled() && doc
+        ? await exportDocumentToPdf(doc, renderOptions())
+        : await exportDraftToPdf(draftResult, renderOptions());
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -520,6 +573,9 @@ downloadPdfBtn.addEventListener("click", async () => {
     downloadPdfBtn.disabled = !hasPieces || !!lastDraftResult?.error;
   }
 });
+
+initEditor(() => lastDraftResult, renderOptions, () => {});
+window.addEventListener("remodellista-rerender", () => render());
 
 applyProduct("blusa");
 render();

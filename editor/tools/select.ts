@@ -1,3 +1,4 @@
+import { syncConstructionGuides } from "../construction/sync.js";
 import { cloneDocument } from "../document.js";
 import { pick, pickNode } from "../canvas/hit-test.js";
 import type { EditorTool, ToolContext } from "./types.js";
@@ -69,6 +70,9 @@ export const selectTool: EditorTool = {
     }
     if (node.handleOut) {
       node.handleOut = { x: node.handleOut.x + dx, y: node.handleOut.y + dy };
+    }
+    if (path.role === "cut") {
+      syncConstructionGuides(piece, dragPathId, dragNodeId);
     }
     ctx.requestRedraw();
   },

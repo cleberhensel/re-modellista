@@ -15,12 +15,21 @@ export type PathRole = "cut" | "seam" | "fold" | "grain" | "notch" | "guide";
 
 export type SegmentKind = "line" | "cubic";
 
+export type GuideKind =
+  | "cf_axis"
+  | "shoulder_line"
+  | "dart_center"
+  | "dart_plus"
+  | "dart_minus"
+  | "grain";
+
 export interface EditablePath {
   id: string;
   role: PathRole;
   closed: boolean;
   nodes: PathNode[];
   segmentKinds: SegmentKind[];
+  guideKind?: GuideKind;
 }
 
 export interface NotchAnnotation {
@@ -40,6 +49,33 @@ export interface GrainlineAnnotation {
 
 export type PieceAnnotation = NotchAnnotation | GrainlineAnnotation;
 
+export interface PieceConstructionState {
+  profileId: string;
+  scalars: {
+    dartOffsetFromSide: number;
+    dartSpreadRatio: number;
+    dartTopOffsetRatio: number;
+    dartApexOffsetFromHemY: number;
+    dartSpreadPx: number;
+    grainOffsetFromSide: number;
+    suppressDarts: boolean;
+  };
+  anchorBindings: Partial<
+    Record<
+      | "cf_neck"
+      | "cf_hem"
+      | "side_bottom"
+      | "shoulder_start"
+      | "shoulder_end"
+      | "intersection"
+      | "dart_hip"
+      | "waist_side",
+      string
+    >
+  >;
+  impactByNode: Record<string, GuideKind[]>;
+}
+
 export interface EditablePiece {
   id: string;
   label: string;
@@ -47,6 +83,7 @@ export interface EditablePiece {
   layout: { x: number; y: number; rotation?: number };
   layoutManual?: boolean;
   annotations: PieceAnnotation[];
+  construction?: PieceConstructionState;
 }
 
 export interface PatternDocument {
@@ -59,6 +96,7 @@ export interface PatternDocument {
     seamAllowanceCm: number;
     pxPerCm?: number;
     editState: "draft" | "dirty" | "applied";
+    regenerateKey?: string;
   };
   manualEditRevision: number;
 }

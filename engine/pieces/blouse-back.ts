@@ -48,7 +48,7 @@ export function draftBlouseBack(ctx: DraftContext): PatternPiece {
     grainBottom
   );
   const sideTop = point(widthPx + k + startOne, s.one * 3 + s.two + startOne);
-  const sideBottom = point(widthPx + startOne - 4 * k, hemY);
+  const sideBottom = point(hipPx + startOne, hemY);
   const collarStart = cfNeck;
   const collarEnd = shoulderStart;
 

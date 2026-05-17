@@ -33,19 +33,58 @@ function isDashed(seg: PathSegment): boolean {
   return (seg.type === "line" || seg.type === "cubic") && !!seg.dash;
 }
 
+function segmentEnd(seg: PathSegment): Point2 {
+  return seg.to;
+}
+
+export function splitSegmentChains(segments: PathSegment[]): PathSegment[][] {
+  const chains: PathSegment[][] = [];
+  let current: PathSegment[] = [];
+
+  const flush = () => {
+    if (current.length > 0) {
+      chains.push(current);
+      current = [];
+    }
+  };
+
+  for (const seg of segments) {
+    if (seg.type === "move") {
+      flush();
+      current = [seg];
+      continue;
+    }
+    if (current.length === 0) {
+      current.push({ type: "move", to: seg.from });
+      current.push(seg);
+      continue;
+    }
+    const prevEnd = segmentEnd(current[current.length - 1]!);
+    if (!samePoint(prevEnd, seg.from)) {
+      flush();
+      current.push({ type: "move", to: seg.from });
+    }
+    current.push(seg);
+  }
+  flush();
+  return chains;
+}
+
 export function segmentsToEditablePath(
   segments: PathSegment[],
   id: string,
   role: PathRole
 ): EditablePath | null {
-  const solid = segments.filter((s) => !isDashed(s));
-  if (solid.length === 0) return null;
+  const drawable = segments.filter(
+    (s) => s.type === "move" || s.type === "line" || s.type === "cubic"
+  );
+  if (drawable.length === 0) return null;
 
   const nodes: EditablePath["nodes"] = [];
   const segmentKinds: SegmentKind[] = [];
   let closed = false;
 
-  for (const seg of solid) {
+  for (const seg of drawable) {
     if (seg.type === "move") {
       addNode(nodes, seg.to);
     } else if (seg.type === "line") {
@@ -89,11 +128,38 @@ export function segmentsToEditablePath(
   };
 }
 
+export function dashedSegmentsToPaths(
+  segments: PathSegment[]
+): EditablePath[] {
+  const dashed = segments.filter(isDashed);
+  if (dashed.length === 0) return [];
+  const chains = splitSegmentChains(dashed);
+  const paths: EditablePath[] = [];
+  chains.forEach((chain, i) => {
+    const path = segmentsToEditablePath(chain, `guide-${i}`, "guide");
+    if (path) paths.push(path);
+  });
+  return paths;
+}
+
 export function dashedSegmentsToPath(
   segments: PathSegment[],
   id: string
 ): EditablePath | null {
-  const dashed = segments.filter(isDashed);
-  if (dashed.length === 0) return null;
-  return segmentsToEditablePath(dashed, id, "guide");
+  const paths = dashedSegmentsToPaths(segments);
+  return paths[0] ?? null;
+}
+
+export function solidSegmentsToPaths(
+  segments: PathSegment[]
+): EditablePath[] {
+  const solid = segments.filter((s) => !isDashed(s));
+  if (solid.length === 0) return [];
+  const chains = splitSegmentChains(solid);
+  const paths: EditablePath[] = [];
+  chains.forEach((chain, i) => {
+    const path = segmentsToEditablePath(chain, `cut-${i}`, "cut");
+    if (path) paths.push(path);
+  });
+  return paths;
 }

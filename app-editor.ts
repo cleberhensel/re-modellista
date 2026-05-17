@@ -25,6 +25,14 @@ export function getPatternDocument(): PatternDocument | null {
   return patternDocument;
 }
 
+export function hasSavedPatternView(doc: PatternDocument | null = patternDocument): boolean {
+  return doc !== null && doc.meta.editState !== "draft";
+}
+
+export function clearSavedPatternView(): void {
+  patternDocument = null;
+}
+
 function saveEditorModePreference(enabled: boolean): void {
   try {
     localStorage.setItem(EDITOR_STORAGE_KEY, enabled ? "1" : "0");
@@ -101,13 +109,28 @@ export function applyEditorEdits(): void {
   syncEditorChrome();
 }
 
+export function commitEditorOnExit(): void {
+  syncDocumentFromCanvas();
+  if (!patternDocument) return;
+  if (hasManualEdits(patternDocument)) {
+    applyManualEdits(patternDocument);
+  }
+  if (patternDocument.meta.editState === "draft") {
+    patternDocument = null;
+  }
+}
+
 export function resetEditorEdits(
   draft: DraftResult,
   options: RenderOptions,
   previewEl: HTMLDivElement,
   onDocumentUpdate: (doc: PatternDocument | null) => void
 ): void {
-  if (!editorEnabled) return;
+  clearSavedPatternView();
+  if (!editorEnabled) {
+    onDocumentUpdate(null);
+    return;
+  }
   mountEditorCanvas(draft, options, previewEl, onDocumentUpdate, true);
 }
 
@@ -116,18 +139,24 @@ export function mountEditorCanvas(
   options: RenderOptions,
   previewEl: HTMLDivElement,
   onDocumentUpdate: (doc: PatternDocument | null) => void,
-  forceReset = false
+  forceReset = false,
+  regenerateKey?: string
 ): void {
   if (!editorEnabled) return;
   const opts = {
     productId: draft.productId,
     seamAllowanceCm: options.seamAllowanceCm ?? 1,
     pxPerCm: options.pxPerCm,
+    regenerateKey,
   };
+  const keyMatches =
+    !regenerateKey ||
+    patternDocument?.meta.regenerateKey === regenerateKey;
   const preserve =
     !forceReset &&
     patternDocument &&
-    shouldPreserveEditorDocument(patternDocument);
+    shouldPreserveEditorDocument(patternDocument) &&
+    keyMatches;
 
   if (preserve && patternDocument) {
     patternDocument.meta.productId = draft.productId;
@@ -158,16 +187,21 @@ export function unmountEditorCanvas(): void {
   syncEditorChrome();
 }
 
-export function renderEditorPreview(): string | null {
-  if (!editorEnabled || !patternDocument) return null;
+export function renderSavedPatternPreview(options: RenderOptions): string | null {
+  if (!patternDocument || !hasSavedPatternView(patternDocument)) return null;
   return renderDocumentToSvg(patternDocument, {
-    seamAllowanceCm: patternDocument.meta.seamAllowanceCm,
-    pxPerCm: patternDocument.meta.pxPerCm,
+    seamAllowanceCm: options.seamAllowanceCm ?? patternDocument.meta.seamAllowanceCm,
+    pxPerCm: options.pxPerCm ?? patternDocument.meta.pxPerCm,
   });
 }
 
+export function shouldConfirmRegenerate(): boolean {
+  if (!patternDocument) return false;
+  return hasSavedPatternView(patternDocument);
+}
+
 export function pendingRegenerate(action: () => void, revert?: () => void): void {
-  if (!editorEnabled || !patternDocument || !hasManualEdits(patternDocument)) {
+  if (!shouldConfirmRegenerate()) {
     action();
     return;
   }
@@ -218,9 +252,9 @@ export function initEditor(
     editorEnabled = toggle.checked;
     saveEditorModePreference(editorEnabled);
     if (!editorEnabled) {
+      commitEditorOnExit();
       unmountEditorCanvas();
-      patternDocument = null;
-      onDocumentUpdate(null);
+      onDocumentUpdate(patternDocument);
     }
     syncEditorChrome();
     window.dispatchEvent(new CustomEvent("remodellista-rerender"));
@@ -292,7 +326,7 @@ export function initEditor(
       if (dialog instanceof HTMLDialogElement) dialog.close();
       const action = pendingRegenerateAction;
       pendingRegenerateAction = null;
-      patternDocument = null;
+      clearSavedPatternView();
       action?.();
     });
   }

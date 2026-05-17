@@ -19,6 +19,16 @@ describe("draftBlouseBack", () => {
     expect(piece.points?.dartCenterX).toBe((ctx.hipPx + ctx.startOne) / 2);
   });
 
+  it("moves side hem with waist like front", () => {
+    const tight = buildContext({ ...measurements, waist: 68 });
+    const loose = buildContext({ ...measurements, waist: 95 });
+    const tightPiece = draftBlouseBack(tight);
+    const loosePiece = draftBlouseBack(loose);
+    expect(tightPiece.points?.sideBottom.x).toBeLessThan(
+      loosePiece.points!.sideBottom.x
+    );
+  });
+
   it("returns error when shoulder lines do not intersect", () => {
     const ctx = buildContext(measurements);
     ctx.s.one = 0.001;

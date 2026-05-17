@@ -1,3 +1,4 @@
+import { syncConstructionGuides } from "./construction/sync.js";
 import type {
   EditablePath,
   PatternDocument,
@@ -124,6 +125,9 @@ export function moveNode(
   }
   if (node.handleOut) {
     node.handleOut = { x: node.handleOut.x + dx, y: node.handleOut.y + dy };
+  }
+  if (path.role === "cut") {
+    syncConstructionGuides(piece, pathId, nodeId);
   }
   bumpRevision(doc);
   return true;

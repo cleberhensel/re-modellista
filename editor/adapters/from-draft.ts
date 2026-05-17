@@ -1,11 +1,12 @@
 import type { DraftResult, PatternPiece } from "../../engine/types.js";
 import { layoutPieces, pieceBounds, translatePiece } from "../../render/layout.js";
 import type { PatternDocument } from "../types.js";
+import { attachConstruction } from "../construction/anchors.js";
 import { resetIdCounter } from "../document.js";
 import { piecePathsToPatternPiece } from "./path-to-segments.js";
 import {
-  dashedSegmentsToPath,
-  segmentsToEditablePath,
+  dashedSegmentsToPaths,
+  solidSegmentsToPaths,
 } from "./segments-to-path.js";
 
 const PIECE_LABELS: Record<string, string> = {
@@ -28,15 +29,11 @@ export interface FromDraftOptions {
   seamAllowanceCm: number;
   productId: string;
   pxPerCm?: number;
+  regenerateKey?: string;
 }
 
 function pieceToEditablePaths(piece: PatternPiece) {
-  const paths = [];
-  const cut = segmentsToEditablePath(piece.paths, "cut-0", "cut");
-  if (cut) paths.push(cut);
-  const guide = dashedSegmentsToPath(piece.paths, "guide-0");
-  if (guide) paths.push(guide);
-  return paths;
+  return [...solidSegmentsToPaths(piece.paths), ...dashedSegmentsToPaths(piece.paths)];
 }
 
 export function fromDraft(
@@ -56,7 +53,7 @@ export function fromDraft(
     const laid = laidOut.find((p) => p.id === original.id) ?? original;
     const ob = pieceBounds(original);
     const lb = pieceBounds(laid);
-    return {
+    const editable = {
       id: original.id,
       label: PIECE_LABELS[original.id] ?? original.id,
       paths: pieceToEditablePaths(original),
@@ -67,6 +64,8 @@ export function fromDraft(
       layoutManual: false,
       annotations: [],
     };
+    attachConstruction(editable, original);
+    return editable;
   });
 
   return {
@@ -79,6 +78,7 @@ export function fromDraft(
       seamAllowanceCm: options.seamAllowanceCm,
       pxPerCm: options.pxPerCm,
       editState: "draft",
+      regenerateKey: options.regenerateKey,
     },
     manualEditRevision: 0,
   };

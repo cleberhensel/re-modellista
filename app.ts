@@ -21,12 +21,15 @@ import type { RenderOptions } from "./render/svg.js";
 import { renderDraftToSvg } from "./render/svg.js";
 import {
   getPatternDocument,
+  hasSavedPatternView,
   initEditor,
   isEditorEnabled,
   mountEditorCanvas,
   pendingRegenerate,
+  renderSavedPatternPreview,
   unmountEditorCanvas,
 } from "./app-editor.js";
+import { buildRegenerateKey } from "./editor/regenerate-key.js";
 
 const SLIDER_DOM: Record<string, string> = {
   bust: "bust",
@@ -426,11 +429,27 @@ function render(): void {
     2
   );
   lastDraftResult = result;
+  const viewOptions = renderOptions();
+  const regenerateKey = buildRegenerateKey(
+    result.productId,
+    measurements,
+    options
+  );
   if (isEditorEnabled()) {
-    mountEditorCanvas(result, renderOptions(), previewEl, () => {});
+    mountEditorCanvas(result, viewOptions, previewEl, () => {}, false, regenerateKey);
   } else {
     unmountEditorCanvas();
-    previewEl.innerHTML = renderDraftToSvg(result, renderOptions());
+    const saved = getPatternDocument();
+    const savedSvg = renderSavedPatternPreview(viewOptions);
+    const savedMatchesKey =
+      saved?.meta.regenerateKey === regenerateKey;
+    if (saved && hasSavedPatternView(saved) && savedMatchesKey && savedSvg) {
+      previewEl.innerHTML = savedSvg;
+      saved.meta.seamAllowanceCm = viewOptions.seamAllowanceCm ?? saved.meta.seamAllowanceCm;
+      saved.meta.pxPerCm = viewOptions.pxPerCm;
+    } else {
+      previewEl.innerHTML = renderDraftToSvg(result, viewOptions);
+    }
   }
   const downloadBtn = document.getElementById("download-pdf");
   if (downloadBtn instanceof HTMLButtonElement) {
@@ -554,10 +573,11 @@ downloadPdfBtn.addEventListener("click", async () => {
   downloadPdfBtn.textContent = "A gerar PDF…";
   try {
     const doc = getPatternDocument();
+    const opts = renderOptions();
     const blob =
-      isEditorEnabled() && doc
-        ? await exportDocumentToPdf(doc, renderOptions())
-        : await exportDraftToPdf(draftResult, renderOptions());
+      doc && hasSavedPatternView(doc)
+        ? await exportDocumentToPdf(doc, opts)
+        : await exportDraftToPdf(draftResult, opts);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

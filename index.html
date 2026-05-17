@@ -14,23 +14,20 @@
   <header class="app-header">
     <div class="app-header-brand">
       <h1 class="app-title">Remodellista</h1>
-      <p class="app-tagline">Medidas em cm → fórmulas → molde (SVG)</p>
     </div>
   </header>
   <main class="layout">
     <section class="panel sidebar">
-      <details class="sidebar-section" open>
-        <summary>Modelo</summary>
-        <div class="sidebar-section-body">
-          <label class="field-label" for="product">Peça</label>
+      <div class="sidebar-section">
+        <h2>Modelo</h2>
+        <div class="sidebar-block">
           <select id="product" aria-label="Peça ou parte"></select>
         </div>
-      </details>
+      </div>
 
-      <details class="sidebar-section" id="composition-section" open>
-        <summary>Composição</summary>
-        <div id="composition-panel" class="sidebar-section-body composition-panel hidden">
-          <label class="field-label" for="composition-preset">Configuração</label>
+      <div class="sidebar-section" id="composition-section">
+        <h2>Composição</h2>
+        <div id="composition-panel" class="sidebar-block composition-panel hidden">
           <select id="composition-preset" aria-label="Preset de composição"></select>
           <div class="composition-toggles">
             <label class="composition-toggle" data-slot="sleeve">
@@ -72,11 +69,11 @@
             </select>
           </div>
         </div>
-      </details>
+      </div>
 
-      <details class="sidebar-section" open>
-        <summary>Medidas</summary>
-        <div class="sidebar-section-body" id="measures-panel">
+      <div class="sidebar-section">
+        <h2>Medidas</h2>
+        <div class="sidebar-block" id="measures-panel">
           <div class="measure" data-measure="bust">
             <div class="measure-head">
               <span>Busto</span>
@@ -170,23 +167,14 @@
           </div>
           <p class="guardrail-hint" id="guardrail-hint" hidden></p>
         </div>
-      </details>
+      </div>
 
     </section>
     <section class="panel panel-mold">
       <div class="panel-mold-header">
         <h2>Molde</h2>
-        <div class="panel-mold-header-actions">
-          <label class="editor-mode-toggle">
-            <input type="checkbox" id="editor-mode-toggle" aria-label="Modo editor">
-            <span>Modo editor</span>
-          </label>
-          <button type="button" id="editor-apply-edits" class="btn btn-primary btn-compact editor-header-btn" hidden>Aplicar</button>
-          <button type="button" id="editor-reset-edits" class="btn btn-secondary btn-compact editor-header-btn" hidden>Limpar</button>
-          <button id="download-pdf" type="button" class="btn btn-secondary btn-compact">PDF (tamanho real)</button>
-        </div>
-      </div>
-      <div id="editor-toolbar" class="editor-toolbar" hidden>
+        <div class="panel-mold-header-end">
+<div id="editor-toolbar" class="editor-toolbar" hidden>
         <div class="editor-toolbar-group" role="toolbar" aria-label="Ferramentas do molde">
           <button type="button" data-tool="select" class="editor-tool-btn is-active" title="Seleccionar (V)" aria-label="Seleccionar">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l7.07 16.97 2.51-7.39 7.39-2.51L4 4z"/></svg>
@@ -222,6 +210,14 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/></svg>
           </button>
         </div>
+          </div>
+
+          <div class="panel-mold-header-actions">
+            <button type="button" id="editor-apply-edits" class="btn btn-primary btn-compact editor-header-btn" hidden>Aplicar</button>
+            <button type="button" id="editor-reset-edits" class="btn btn-secondary btn-compact editor-header-btn" hidden>Limpar</button>
+            <button id="download-pdf" type="button" class="btn btn-secondary btn-compact">PDF</button>
+          </div>
+        </div>
       </div>
       <dialog id="editor-regenerate-dialog" class="editor-dialog">
         <h3>Regenerar molde?</h3>
@@ -231,7 +227,19 @@
           <button type="button" id="editor-regenerate-confirm" class="btn btn-primary">Regenerar</button>
         </div>
       </dialog>
-      <div class="preview" id="preview"></div>
+      <div class="preview-stage">
+        <div class="preview-chrome">
+          <label class="editor-mode-toggle">
+            <input type="checkbox" id="editor-mode-toggle" class="editor-mode-toggle-input" aria-label="Preview">
+            <span class="editor-mode-toggle-track">
+              <span class="editor-mode-toggle-thumb" aria-hidden="true"></span>
+              <span class="editor-mode-toggle-label">Preview</span>
+              <span class="editor-mode-toggle-label">Editor</span>
+            </span>
+          </label>
+        </div>
+        <div class="preview" id="preview"></div>
+      </div>
     </section>
     <section class="panel formulas sidebar">
       <h2>Fórmulas (resultado)</h2>

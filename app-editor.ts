@@ -54,6 +54,10 @@ function syncEditorChrome(): void {
   const toolbar = document.getElementById("editor-toolbar");
   const applyBtn = document.getElementById("editor-apply-edits");
   const resetBtn = document.getElementById("editor-reset-edits");
+  const toggle = document.getElementById("editor-mode-toggle");
+  if (toggle instanceof HTMLInputElement) {
+    toggle.setAttribute("aria-label", editorEnabled ? "Editor" : "Preview");
+  }
   if (toolbar) toolbar.hidden = !editorEnabled;
   const dirty = editorEnabled && patternDocument && hasManualEdits(patternDocument);
   const canReset =
